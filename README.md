@@ -40,7 +40,7 @@ This project is configured to automatically deploy to GitHub Pages using GitHub 
    git commit -m "Initial commit: Expert Booking Assistant"
    
    # Add your GitHub repository as remote
-   git remote add origin https://github.com/YOUR_USERNAME/expert-booking-assistant.git
+   git remote add origin https://github.com/alanyoungcy/expert-booking-assistant.git
    
    # Push to GitHub
    git branch -M main
@@ -51,7 +51,7 @@ This project is configured to automatically deploy to GitHub Pages using GitHub 
    - Go to your repository on GitHub
    - Navigate to **Settings** → **Pages**
    - Under **Source**, select **GitHub Actions**
-   - The site will be available at: `https://YOUR_USERNAME.github.io/expert-booking-assistant/`
+   - The site will be available at: `https://alanyoungcy.github.io/expert-booking-assistant/`
 
 ### Automatic Deployment
 
@@ -68,3 +68,8 @@ For production deployment, you'll need to set environment variables in GitHub:
 - Add repository secrets for any required environment variables
 
 **Note:** Since GitHub Pages serves static files, environment variables prefixed with `VITE_` are embedded at build time. Make sure to set them in your GitHub Actions secrets if needed.
+
+## Repository
+
+- **GitHub Repository:** https://github.com/alanyoungcy/expert-booking-assistant
+- **Live Site:** https://alanyoungcy.github.io/expert-booking-assistant/
