@@ -4,8 +4,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    // Always use base path for GitHub Pages (repository name)
+    const base = process.env.GITHUB_PAGES === 'true' || process.env.GITHUB_ACTIONS ? '/expert-booking-assistant/' : '/';
     return {
-      base: process.env.GITHUB_PAGES ? '/expert-booking-assistant/' : '/',
+      base,
       server: {
         port: 3000,
         host: '0.0.0.0',
