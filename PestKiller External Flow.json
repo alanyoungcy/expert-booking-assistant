@@ -1,0 +1,1324 @@
+{
+  "name": "PestKiller External Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "booking-assistant",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        6064,
+        5328
+      ],
+      "id": "29992a92-24c5-4525-ae1c-164a55c9fa7d",
+      "name": "客戶預約請求",
+      "webhookId": "c327d4fc-c72c-42f9-94e0-75d17725a860"
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "origins",
+              "value": "={{ $json._mapsParams.origins }}"
+            },
+            {
+              "name": "destinations",
+              "value": "={{ $json._mapsParams.destinations }}"
+            },
+            {
+              "name": "key",
+              "value": "AIzaSyCujmDrdlHgPEaKxtn8CbpBNPKwhXIDUKs"
+            },
+            {
+              "name": "mode",
+              "value": "driving"
+            },
+            {
+              "name": "language",
+              "value": "zh-HK"
+            },
+            {
+              "name": "region",
+              "value": "HK"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7056,
+        6112
+      ],
+      "id": "a4c32625-704a-43e0-a5b4-bf655d9d2deb",
+      "name": "職員地址",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "aR4jbCmd9PeKCEqL",
+          "name": "Google Map Distance Matrix"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "89dd73ee-c857-47e4-900f-7b2d00c54b74",
+              "name": "品牌",
+              "value": "={{ $json.body.brandName }}",
+              "type": "string"
+            },
+            {
+              "id": "4c81d4bf-45c7-4550-9cb1-ae82a26b17a9",
+              "name": "服務",
+              "value": "={{ $json.body.serviceName }}",
+              "type": "string"
+            },
+            {
+              "id": "d252afa3-780c-4bb8-8bd7-cc770002e7da",
+              "name": "地區",
+              "value": "={{ $json.body.mainAreaName }}{{ $json.body.subAreaName }}",
+              "type": "string"
+            },
+            {
+              "id": "district-english-field",
+              "name": "district",
+              "value": "={{ $json.body.mainAreaName }}{{ $json.body.subAreaName }}",
+              "type": "string"
+            },
+            {
+              "id": "15d84e6e-ca7a-4e5a-a636-a3d7a6b3e857",
+              "name": "單位尺數 (平方尺)",
+              "value": "={{ $json.body.unitArea }}",
+              "type": "number"
+            },
+            {
+              "id": "bd35554c-258f-4205-9be8-7dff1dfdad13",
+              "name": "問題嚴重程度(1-5級)",
+              "value": "={{ $json.body.estimatedSeverity }}",
+              "type": "number"
+            },
+            {
+              "id": "6afc9dfc-0a38-47f0-99d0-c0058ae6bbfa",
+              "name": "預估服務時間(分鐘)",
+              "value": "={{ $json.body.manualEstimatedDuration }}",
+              "type": "number"
+            },
+            {
+              "id": "c8544051-dccd-4b0c-840a-f1ecd9f5601b",
+              "name": "回訪中間空檔(小時)",
+              "value": "={{ $json.body.revisitDelay ? Number($json.body.revisitDelay) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "8ed45f4e-4833-494c-86fe-77e45079f713",
+              "name": "回訪停留時長(分鐘)",
+              "value": "={{ $json.body.manualRevisitDuration ? Number($json.body.manualRevisitDuration) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "7d143fc1-3ad3-4e48-9301-fe8bbd6d80b0",
+              "name": "備註",
+              "value": "={{ $json.body?.notes ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "c38aa744-3a55-444f-b16d-5ae03d399108",
+              "name": "提交日期",
+              "value": "={{ DateTime.fromISO($json.body.timestamp).toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "23361f50-d6e4-4574-9f0c-4f11fe2f5236",
+              "name": "提交時間",
+              "value": "={{ DateTime.fromISO($json.body.timestamp).toFormat('HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "morning-cleaning-field",
+              "name": "早上清潔",
+              "value": "={{ $json.body.morningCleaningOnly || $json.body.早上清潔 || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6288,
+        5344
+      ],
+      "id": "50e1e244-f44f-4f37-9fd5-9c42e353794d",
+      "name": "抽出必要字段",
+      "options": {
+        "keepOnlySet": true
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Function node\n * Input: items[0].json 包含 { appointments: [...] } 或 [ { appointments: [...] } ]\n * Output: 每個預約一個 item，並附加：\n *  - prev_gap_minutes / next_gap_minutes：與前/後單空檔分鐘，負值表示重疊\n *  - prev_district / next_district：前/後單地區\n *  - prev_id / next_id：可追蹤，方便驗證\n */\n\nfunction pad(n){ return String(n).padStart(2, '0'); }\nfunction toDT(dateStr, timeStr, allDay){\n  if (!dateStr) return null;\n  const [Y,M,D] = dateStr.split('-').map(Number);\n  let h = 0, m = 0;\n  if (allDay) { h = 0; m = 0; }\n  else if (timeStr) { [h, m] = timeStr.split(':').map(Number); }\n  else { return null; }\n  return new Date(Y, M - 1, D, h, m, 0, 0);\n}\nfunction diffMin(a, b){\n  // returns (a - b) in minutes\n  return Math.round((a.getTime() - b.getTime()) / 60000);\n}\nfunction getDistrict(appt){\n  // 優先 label，其次中文，最後英文\n  return appt?.order?.district?.label\n      ?? appt?.order?.district?.name_zh\n      ?? appt?.order?.district?.name_en\n      ?? null;\n}\n\n// 取得 appointments 陣列\nconst inputItems = (typeof $input !== 'undefined' && $input.all) ? $input.all() : (typeof items !== 'undefined' ? items : []);\nlet root = inputItems[0]?.json;\nif (Array.isArray(root)) root = root[0];\nconst appts = root?.appointments ?? [];\n\n// 定義要排除的顏色碼\nconst EXCLUDED_COLORS = ['#ed562e', '#e17e76'];\n\n//\n// 1) 預處理，轉成帶有日期物件，並過濾顏色碼\n//\nconst enriched = appts\n  .filter(a => {\n    // 過濾掉指定顏色碼的預約\n    const color = (a.color || '').toLowerCase();\n    if (EXCLUDED_COLORS.includes(color)) {\n      console.log(`[拆分出每個預約] 過濾顏色碼 ${color} 的預約 ID: ${a.id}`);\n      return false;\n    }\n    return true;\n  })\n  .map(a => {\n    const isAllDay = a.all_day === 1 || a.job_type === 'Holiday';\n    const startDT  = toDT(a.date, a.start_time, isAllDay);\n    const endDT    = toDT(a.end_date || a.date, a.end_time, isAllDay) \n                     || (startDT ? new Date(startDT.getFullYear(), startDT.getMonth(), startDT.getDate(), 23, 59, 0, 0) : null);\n\n    return {\n      ...a,\n      __date: a.date || null,\n      __user: a.user_id ?? null,\n      __startDT: startDT,\n      __endDT: endDT,\n      __district: getDistrict(a),\n      __isAllDay: isAllDay,\n    };\n  });\n\nconsole.log(`[拆分出每個預約] 原始預約數: ${appts.length}, 過濾後: ${enriched.length}`);\n\n// 2) 依「員工 + 日期」分組\nconst groups = new Map();\nfor (const a of enriched) {\n  const key = `${a.__user ?? 'NA'}|${a.__date ?? 'NA'}`;\n  if (!groups.has(key)) groups.set(key, []);\n  groups.get(key).push(a);\n}\n\n// 3) 每組內依開始時間排序，計算前/後單資訊\nconst out = [];\nfor (const [, list] of groups.entries()) {\n  list.sort((x, y) => {\n    const ax = x.__startDT?.getTime() ?? 0;\n    const ay = y.__startDT?.getTime() ?? 0;\n    return ax - ay;\n  });\n\n  for (let i = 0; i < list.length; i++) {\n    const cur  = list[i];\n    const prev = i > 0 ? list[i - 1] : null;\n    const next = i < list.length - 1 ? list[i + 1] : null;\n\n    // 計算前/後單空檔分鐘，負數代表重疊，正數為空檔\n    let prevGap = null;\n    if (prev && cur.__startDT && prev.__endDT) {\n      prevGap = Math.max(0, diffMin(cur.__startDT, prev.__endDT));\n    }\n\n    let nextGap = null;\n    if (next && cur.__endDT && next.__startDT) {\n      nextGap = Math.max(0, diffMin(next.__startDT, cur.__endDT));\n    }\n\n    // 組裝輸出，保留原欄位 + 新增欄位\n    out.push({\n      json: {\n        ...cur,\n\n        // 可直接用在 Set 節點或其他節點\n        prev_gap_minutes: prevGap,                // 與前單空檔分鐘，負為重疊\n        next_gap_minutes: nextGap,                // 與後單空檔分鐘，負為重疊\n        prev_district: prev ? getDistrict(prev) : null,  // 前單地區\n        next_district: next ? getDistrict(next) : null,  // 後單地區\n\n        // 方便驗證，追蹤，可選\n        prev_id: prev?.id ?? null,\n        next_id: next?.id ?? null,\n\n        // 也預留檢索用的完整時間可讀字串，可選\n        start_datetime: cur.__startDT ? cur.__startDT.toISOString() : null,\n        end_datetime:   cur.__endDT   ? cur.__endDT.toISOString()   : null,\n      }\n    });\n  }\n}\n\n// 4) 回傳下游 item\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6736,
+        5344
+      ],
+      "id": "0fce3ce1-0e43-4369-b763-a4f79ef2cb2c",
+      "name": "拆分出每個預約"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "68a5bcd6-ad5f-4bc1-9a22-55ca04aa861b",
+              "name": "id",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "bf541c9b-f45c-4365-8533-1cbdd9945f40",
+              "name": "服務地區",
+              "value": "={{ $json.order?.district?.label ? '香港' + $json.order.district.label : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "c9ae07a8-60ab-45f2-82b3-fb58d4927032",
+              "name": "單類型",
+              "value": "={{ $json.job_type  || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "43a999aa-85ce-4b73-a550-adabc84c6a79",
+              "name": "處理職員",
+              "value": "={{\n  [\n    ($json.user?.name || ''),\n    ...($json.additional_workers || []).map(w => w.user?.name || '')\n  ]\n  .filter(n => n)       // 移除空值\n  .join('+')\n}}",
+              "type": "string"
+            },
+            {
+              "id": "b0f02dcb-b6ee-4790-85ef-976bfa74c236",
+              "name": "服務項目",
+              "value": "={{ $json.title.split('/')[0] || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "b13be4f2-214a-4162-ac82-4c868aae2f01",
+              "name": "服務日期",
+              "value": "={{ $json.date  || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "79db96b2-3973-4c01-b824-8b7ed207c35d",
+              "name": "開始時間",
+              "value": "={{ $json.start_time  || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "313842f2-90f5-44aa-a3d2-d262a4cef97d",
+              "name": "結束日期",
+              "value": "={{ $json.end_date  || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "57057510-3c9b-4eef-aa44-224ebd4b42a3",
+              "name": "結束時間",
+              "value": "={{ $json.end_time  || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "144d664d-e850-4fd9-bc33-dc5673ad842a",
+              "name": "創建日期",
+              "value": "={{ DateTime.fromISO($json.created_at  || '').toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "e9a9388f-ae0f-404c-917c-d09f6f4c5a9d",
+              "name": "創建時間",
+              "value": "={{ DateTime.fromISO($json.created_at  || '').toFormat('HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "19a35dd9-1bb2-42a2-9d7a-2bc9bf7e2ac9",
+              "name": "前一單的地區",
+              "value": "={{ $json.prev_district }}",
+              "type": "string"
+            },
+            {
+              "id": "a37b6041-80e3-4be6-a203-75a87bcf6603",
+              "name": "後一單的地區",
+              "value": "={{ $json.next_district }}",
+              "type": "string"
+            },
+            {
+              "id": "e6522adb-725a-433b-b60d-593eef0872f0",
+              "name": "與前一單空檔時間",
+              "value": "={{ $json.prev_gap_minutes != null ? $json.prev_gap_minutes + ' 分鐘' : null }}",
+              "type": "string"
+            },
+            {
+              "id": "43f31ca8-2c29-4871-b65d-1afed1d98c4c",
+              "name": "與後一單空檔時間",
+              "value": "={{ $json.next_gap_minutes != null ? $json.next_gap_minutes + ' 分鐘' : null }}",
+              "type": "string"
+            },
+            {
+              "id": "64e5d749-54ca-4e12-8ad0-9035d80c2150",
+              "name": "品牌",
+              "value": "={{ $('抽出必要字段').item.json['品牌'] }}",
+              "type": "string"
+            },
+            {
+              "id": "0bd4e308-e30a-4253-9582-2997161e64df",
+              "name": "服務",
+              "value": "={{ $('抽出必要字段').item.json['服務'] }}",
+              "type": "string"
+            },
+            {
+              "id": "770f93aa-5a2b-4d13-a86e-827ecc36198c",
+              "name": "地區",
+              "value": "={{ $('抽出必要字段').item.json['地區'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9f56acee-5d91-4663-8ebc-abe91b237e79",
+              "name": "單位尺數 (平方尺)",
+              "value": "={{ $('抽出必要字段').item.json['單位尺數 (平方尺)'] }}",
+              "type": "number"
+            },
+            {
+              "id": "25d9c339-1cea-4b8d-be14-f0ddfceeab8a",
+              "name": "問題嚴重程度(1-5級)",
+              "value": "={{ $('抽出必要字段').item.json['問題嚴重程度(1-5級)'] }}",
+              "type": "number"
+            },
+            {
+              "id": "064dc33e-ad7b-49db-8be7-375a0d7a86c7",
+              "name": "預估服務時間(分鐘)",
+              "value": "={{ $('抽出必要字段').item.json['預估服務時間(分鐘)'] }}",
+              "type": "number"
+            },
+            {
+              "id": "56ad3f8f-1979-4554-a0c4-291703ca99d4",
+              "name": "回訪中間空檔(小時)",
+              "value": "={{ $('抽出必要字段').item.json['回訪中間空檔(小時)'] ? Number($('抽出必要字段').item.json['回訪中間空檔(小時)']) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "fd7d3b73-a628-498d-8fb9-a7969da43035",
+              "name": "回訪停留時長(分鐘)",
+              "value": "={{ $('抽出必要字段').item.json['回訪停留時長(分鐘)'] ? Number($('抽出必要字段').item.json['回訪停留時長(分鐘)']) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "6b647f7c-025b-4b30-9afe-adb0cd2467fa",
+              "name": "備註",
+              "value": "={{ $('抽出必要字段').item.json['備註'] }}",
+              "type": "string"
+            },
+            {
+              "id": "78143fe0-e233-4197-95b2-1dc28c36ad35",
+              "name": "提交日期",
+              "value": "={{ $('抽出必要字段').item.json['提交日期'] }}",
+              "type": "string"
+            },
+            {
+              "id": "b7e8ac31-63c1-4028-b8f1-9da2cd80b216",
+              "name": "提交時間",
+              "value": "={{ $('抽出必要字段').item.json['提交時間'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6928,
+        5088
+      ],
+      "id": "e1f27ca1-b27c-47ba-8186-b9644f59ed38",
+      "name": "CRM-抽出必要字段",
+      "options": {
+        "keepOnlySet": true
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://pestskillerhk.app/api/appointments/timetable",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filters[view]",
+              "value": "dayGridMonth"
+            },
+            {
+              "name": "filters[start]",
+              "value": "={{ DateTime.fromISO($json['提交日期']).plus({ days: 2 }).toFormat('yyyy-MM-dd') }}"
+            },
+            {
+              "name": "filters[end]",
+              "value": "={{ DateTime.fromISO($json['提交日期']).plus({ days: 13 }).toFormat('yyyy-MM-dd') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6512,
+        5344
+      ],
+      "id": "e41597c7-9c07-4234-8deb-325d540e5ede",
+      "name": "獲取未來7D CRM排程",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "R3bd7I4KesETUTAr",
+          "name": "Pest Killer CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Simplified AI Data Preparation with Staff Config\n * ✅ UPDATED: Added fuzzy column matching for home_district\n *\n * Purpose: Parse appointments, build staff config, calculate free slots\n * Filtering is done in later stages\n */\n\n// ========= Helper Functions =========\nconst Helpers = {\n  toMin: (timeStr) => {\n    if (!timeStr) return null;\n    const [h, m] = String(timeStr).split(':').map(Number);\n    return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;\n  },\n\n  fromMin: (minutes) => {\n    if (minutes == null || !Number.isFinite(minutes)) return null;\n    const h = String(Math.floor(minutes / 60)).padStart(2, '0');\n    const m = String(minutes % 60).padStart(2, '0');\n    return `${h}:${m}`;\n  },\n\n  addDays: (dateStr, daysToAdd) => {\n    if (!dateStr) return null;\n    try {\n      const [y, m, d] = String(dateStr).split('-').map(Number);\n      const dt = new Date(Date.UTC(y, m - 1, d));\n      if (isNaN(dt.getTime())) return null;\n      dt.setUTCDate(dt.getUTCDate() + daysToAdd);\n      return dt.toISOString().split('T')[0];\n    } catch (e) { return null; }\n  },\n\n  todayHK: () => {\n    const now = new Date();\n    const hk = new Date(now.getTime() + 8 * 60 * 60000 - now.getTimezoneOffset() * 60000);\n    return hk.toISOString().split('T')[0];\n  },\n\n  extractNumber: (str) => {\n    if (str == null) return null;\n    const num = Number(String(str).replace(/[^\\d.-]/g, \"\"));\n    return Number.isFinite(num) ? num : null;\n  }\n};\n\n// ========= Fuzzy Find Home District =========\n// ✅ NEW: Try multiple possible column names for home district\nfunction findHomeDistrict(row) {\n  if (!row || typeof row !== 'object') return null;\n\n  // Priority 1: Check _parsed.home_district (from 整理Google職員資料)\n  if (row._parsed && row._parsed.home_district) {\n    return row._parsed.home_district;\n  }\n\n  // Priority 2: Check top-level home_district\n  if (row.home_district && String(row.home_district).trim()) {\n    return String(row.home_district).trim();\n  }\n\n  // Priority 3: Exact column names\n  const exactKeys = ['居住地', '居住地區', '住址', '地址', 'homeDistrict', 'address'];\n  for (const key of exactKeys) {\n    const val = row[key];\n    if (val !== undefined && val !== null && String(val).trim()) {\n      return String(val).trim();\n    }\n  }\n\n  // Priority 4: Fuzzy match - columns containing these keywords\n  const fuzzyPatterns = ['居住', '住址'];\n  for (const key of Object.keys(row)) {\n    for (const pattern of fuzzyPatterns) {\n      if (key.includes(pattern)) {\n        const val = row[key];\n        if (val !== undefined && val !== null && String(val).trim()) {\n          return String(val).trim();\n        }\n      }\n    }\n  }\n\n  return null;\n}\n\n// ========= Build Staff Config (Work Hours + Home District) =========\nfunction buildStaffConfig(staffMeta, staffSheet, googleSheetData) {\n  const result = {};\n\n  const processRows = (rows) => {\n    console.log(`[buildStaffConfig] Processing ${rows.length} rows`);\n\n    // Debug: Show column names from first row\n    if (rows.length > 0) {\n      const firstRow = rows[0];\n      const keys = Object.keys(firstRow);\n      console.log(`[buildStaffConfig] 📋 Available columns:`, keys.slice(0, 15).join(', '));\n    }\n\n    for (const row of rows) {\n      if (!row || typeof row !== 'object') continue;\n      const name = row[\"職員\"] || row[\"name\"] || row[\"Name\"];\n      if (!name) continue;\n\n      const cleanName = String(name).trim();\n\n      let workStart, workEnd;\n      if (row._parsed && row._parsed.work_start && row._parsed.work_end) {\n        workStart = row._parsed.work_start;\n        workEnd = row._parsed.work_end;\n      } else {\n        const start = (row[\"開工時段\"] || row[\"work_start\"] || \"\").toString().trim();\n        const end = (row[\"收工時段\"] || row[\"work_end\"] || \"\").toString().trim();\n        workStart = start || \"09:00\";\n        workEnd = end || \"18:00\";\n      }\n\n      // ✅ Use fuzzy find for home district\n      const homeDistrict = findHomeDistrict(row);\n\n      result[cleanName] = {\n        work_start: workStart,\n        work_end: workEnd,\n        home_district: homeDistrict,\n        buffer_min: Number(row[\"交通緩衝(分鐘)\"] || row[\"buffer_min\"]) || null\n      };\n\n      // Debug log for first few staff\n      if (Object.keys(result).length <= 3) {\n        console.log(`[buildStaffConfig] Staff \"${cleanName}\": home_district = \"${homeDistrict || '(null)'}\"`);\n      }\n    }\n  };\n\n  // Google Sheets has highest priority\n  if (Array.isArray(staffSheet) && staffSheet.length) {\n    console.log(`[buildStaffConfig] Using staffSheet (${staffSheet.length} rows)`);\n    processRows(staffSheet);\n  } else if (Array.isArray(googleSheetData) && googleSheetData.length) {\n    console.log(`[buildStaffConfig] Using googleSheetData (${googleSheetData.length} rows)`);\n    processRows(googleSheetData);\n  } else {\n    console.log(`[buildStaffConfig] ⚠️ No staffSheet or googleSheetData available`);\n  }\n\n  // Supplement with staffMeta\n  if (Array.isArray(staffMeta) && staffMeta.length) {\n    for (const s of staffMeta) {\n      if (s && s.name) {\n        const cleanName = String(s.name).trim();\n        if (!result[cleanName]) {\n          result[cleanName] = {\n            work_start: s.work_start || \"09:00\",\n            work_end: s.work_end || \"18:00\",\n            home_district: s.home_district || null,\n            buffer_min: Number(s.buffer_min) || null\n          };\n        } else if (!result[cleanName].home_district && s.home_district) {\n          // ✅ Fill in missing home_district from staffMeta\n          result[cleanName].home_district = s.home_district;\n        }\n      }\n    }\n  }\n\n  return result;\n}\n\n// ========= Parse Appointments =========\nfunction parseAppointments(raw) {\n  const machineData = [];\n  const holidayIndex = {};\n\n  for (const item of raw) {\n    if (!item || typeof item !== 'object') continue;\n\n    // Holiday tracking\n    const staffStr = item[\"處理職員\"] || '';\n    const jobType = (item[\"單類型\"] || '').toLowerCase();\n    if (staffStr && (jobType === 'holiday' || /假|holiday/i.test(item.title || ''))) {\n      const start = item.date || item[\"服務日期\"];\n      const end = item[\"結束日期\"] || start;\n      if (start) {\n        const staffNames = staffStr.split(/[+＋]/).map(s => s.trim()).filter(Boolean);\n        const dates = [];\n        let curr = start;\n        while (curr && dates.length < 365) {\n          dates.push(curr);\n          if (curr === end) break;\n          curr = Helpers.addDays(curr, 1);\n        }\n        for (const staff of staffNames) {\n          if (!holidayIndex[staff]) holidayIndex[staff] = {};\n          for (const d of dates) holidayIndex[staff][d] = true;\n        }\n      }\n    }\n\n    // Machine data\n    const sDate = item[\"服務日期\"];\n    const sTime = item[\"開始時間\"];\n    const eDate = item[\"結束日期\"];\n    const eTime = item[\"結束時間\"];\n\n    machineData.push({\n      id: item.id ? Number(item.id) : null,\n      service_district: item[\"服務地區\"] || null,\n      job_type: item[\"單類型\"] || null,\n      staff: item[\"處理職員\"] || null,\n      service: item[\"服務項目\"] || null,\n      start_at: (sDate && sTime) ? `${sDate}T${sTime}:00+08:00` : null,\n      end_at: (eDate && eTime) ? `${eDate}T${eTime}:00+08:00` : null,\n      prev: {\n        district: item[\"前一單的地區\"] || null,\n        gap_minutes: Helpers.extractNumber(item[\"與前一單空檔時間\"]),\n        drive_minutes: Helpers.extractNumber(item[\"與前一單地區行車時間\"])\n      },\n      next: {\n        district: item[\"後一單的地區\"] || null,\n        gap_minutes: Helpers.extractNumber(item[\"與後一單空檔時間\"]),\n        drive_minutes: Helpers.extractNumber(item[\"與後一單地區行車時間\"])\n      },\n      drive_to_new_request_minutes: Helpers.extractNumber(item[\"與新預約行車時間\"]),\n      revisit: {\n        required: Boolean(item[\"是否需要回訪\"]),\n        mid_gap: item[\"初訪與回訪中間空檔時間\"] || null,\n        revisit_slot: item[\"回訪時間及停留時長\"] || null\n      }\n    });\n  }\n\n  return { machineData, holidayIndex };\n}\n\n// ========= Build Schedule Index =========\nfunction buildScheduleIndex(machineData) {\n  const indexed = {};\n  const staffSet = new Set();\n\n  for (const apt of machineData) {\n    if (!apt.staff || !apt.start_at) continue;\n\n    const date = apt.start_at.slice(0, 10);\n    const start = apt.start_at.slice(11, 16);\n    const end = apt.end_at ? apt.end_at.slice(11, 16) : null;\n\n    const staffNames = apt.staff.split(/[+＋]/).map(s => s.trim()).filter(Boolean);\n\n    for (const staff of staffNames) {\n      if (!staff) continue;\n      staffSet.add(staff);\n\n      if (!indexed[staff]) indexed[staff] = {};\n      if (!indexed[staff][date]) indexed[staff][date] = [];\n\n      indexed[staff][date].push({\n        id: apt.id,\n        service: apt.service,\n        district: apt.service_district,\n        start,\n        end\n      });\n    }\n  }\n\n  return { indexed, staffList: Array.from(staffSet) };\n}\n\n// ========= Calculate Free Slots =========\nfunction calculateFreeSlots(staffList, indexed, holidayIndex, staffCfg, days11, defaultBuffer) {\n  return staffList.map(staff => {\n    const config = staffCfg[staff] || {};\n    const workStart = config.work_start || \"09:00\";\n    const workEnd = config.work_end || \"18:00\";\n    const workStartMin = Helpers.toMin(workStart);\n    const workEndMin = Helpers.toMin(workEnd);\n    const bufferMin = Number(config.buffer_min) || defaultBuffer;\n\n    if (workStartMin == null || workEndMin == null || workStartMin >= workEndMin) {\n      return { staff, days: [] };\n    }\n\n    const days = days11.map(date => {\n      // Check Holiday\n      if (holidayIndex[staff]?.[date]) {\n        return {\n          date,\n          work_start: null,\n          work_end: null,\n          holiday: true,\n          appointments: [],\n          free_slots: []\n        };\n      }\n\n      const appointments = indexed[staff]?.[date] || [];\n\n      // Build blocked ranges\n      const blocks = [];\n      for (const apt of appointments) {\n        const s = Helpers.toMin(apt.start);\n        const e = Helpers.toMin(apt.end);\n        if (s != null && e != null) {\n          const adjS = Math.max(s, workStartMin);\n          const adjE = Math.min(e, workEndMin);\n          if (adjS < adjE) {\n            blocks.push({\n              s: Math.max(adjS - bufferMin, workStartMin),\n              e: Math.min(adjE + bufferMin, workEndMin)\n            });\n          }\n        }\n      }\n\n      blocks.sort((a, b) => a.s - b.s);\n\n      // Merge blocks\n      const merged = [];\n      for (const b of blocks) {\n        if (!merged.length || b.s > merged[merged.length - 1].e) {\n          merged.push(b);\n        } else {\n          merged[merged.length - 1].e = Math.max(merged[merged.length - 1].e, b.e);\n        }\n      }\n\n      // Calculate free slots\n      const freeSlots = [];\n      let curr = workStartMin;\n      for (const m of merged) {\n        if (m.s > curr) {\n          freeSlots.push({\n            start: Helpers.fromMin(curr),\n            end: Helpers.fromMin(m.s),\n            minutes: m.s - curr\n          });\n        }\n        curr = Math.max(curr, m.e);\n      }\n      if (curr < workEndMin) {\n        freeSlots.push({\n          start: Helpers.fromMin(curr),\n          end: Helpers.fromMin(workEndMin),\n          minutes: workEndMin - curr\n        });\n      }\n\n      // Calculate booked minutes\n      let booked = 0;\n      for (const apt of appointments) {\n        const s = Helpers.toMin(apt.start);\n        const e = Helpers.toMin(apt.end);\n        if (s != null && e != null) {\n          booked += Math.max(0, Math.min(e, workEndMin) - Math.max(s, workStartMin));\n        }\n      }\n\n      let totalFree = 0;\n      let maxFree = 0;\n      for (const slot of freeSlots) {\n        totalFree += slot.minutes;\n        if (slot.minutes > maxFree) maxFree = slot.minutes;\n      }\n\n      return {\n        date,\n        work_start: workStart,\n        work_end: workEnd,\n        holiday: false,\n        appointments,\n        free_slots: freeSlots,\n        booked_minutes: booked,\n        total_free_minutes: totalFree,\n        max_contiguous_free_minutes: maxFree\n      };\n    });\n\n    return { staff, days };\n  });\n}\n\n// ========= Main Process =========\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  if (!item || !item.json) continue;\n\n  const json = item.json;\n  const raw = Array.isArray(json.data) ? json.data : [];\n\n  // Build staff config\n  const sheetData = (Array.isArray(json.staffSheet) && json.staffSheet.length)\n    ? json.staffSheet\n    : [];\n  const staffCfg = buildStaffConfig(json.staffMeta, json.staffSheet, sheetData);\n\n  // Parse appointments\n  const { machineData, holidayIndex } = parseAppointments(raw);\n\n  // Build schedule index\n  const { indexed, staffList } = buildScheduleIndex(machineData);\n\n  // Calculate date window\n  // ALWAYS use today + 2 calendar days (not submission date)\n  // Example: Today is Dec 20, 2025 -> Find slots starting Dec 22, 2025\n  const today = Helpers.todayHK();\n  const startDate = Helpers.addDays(today, 2);\n  console.log(`[📋 AI準備] 日期計算: 今天=${today}, 開始日期=${startDate} (今天+2日曆天)`);\n\n  const days11 = [];\n  let curr = startDate;\n  for (let i = 0; i < 11; i++) {\n    days11.push(curr);\n    curr = Helpers.addDays(curr, 1);\n  }\n  const windowEnd = days11[days11.length - 1];\n\n  // Calculate free slots with staff-specific work hours\n  const defaultBuffer = Number(json[\"交通緩衝(分鐘)\"]) || 30;\n  const freeSlotsCalendar = calculateFreeSlots(\n    staffList,\n    indexed,\n    holidayIndex,\n    staffCfg,\n    days11,\n    defaultBuffer\n  );\n\n  console.log(`[📋 AI準備] 處理完成: ${staffList.length} 位職員, ${days11.length} 天`);\n  console.log(`[📋 AI準備] 職員配置數: ${Object.keys(staffCfg).length}`);\n\n  // Debug: Show staffCfg home_district values\n  const staffWithAddress = Object.entries(staffCfg).filter(([name, cfg]) => cfg.home_district).map(([name, cfg]) => `${name}: ${cfg.home_district}`);\n  console.log(`[📋 AI準備] 有住址的職員: ${staffWithAddress.length}/${Object.keys(staffCfg).length}`);\n  if (staffWithAddress.length > 0) {\n    console.log(`[📋 AI準備] 住址列表:`, staffWithAddress.slice(0, 5).join(', '));\n  } else {\n    console.log(`[📋 AI準備] ⚠️ 沒有職員有住址數據！請檢查 Google Sheets 的「居住地」欄位`);\n    // ✅ NEW: Show what columns ARE available in staffSheet\n    if (json.staffSheet && json.staffSheet.length > 0) {\n      const sampleRow = json.staffSheet[0];\n      console.log(`[📋 AI準備] 📋 staffSheet 可用欄位:`, Object.keys(sampleRow).slice(0, 15).join(', '));\n    }\n  }\n\n  results.push({\n    json: {\n      ...json,\n      machineData,\n      freeSlotsCalendar,\n      holidayIndex,\n      staffCfg,\n      staffList,\n      windowStart: startDate,\n      windowEnd,\n      serviceDistrict: json.district || json['地區'] || '香港'\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6768,
+        5904
+      ],
+      "id": "e128e865-b0a6-4232-a474-049a3f965940",
+      "name": "把資料轉到AI agent友好",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_prompt_debug }}",
+        "options": {
+          "systemMessage": "={{ $json.system_prompt }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        7840,
+        6064
+      ],
+      "id": "74d2f76e-a1e2-42d0-ad20-735733b4bf9a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-ignore - items is provided by n8n runtime\nconst GAP_MINUTES = 330;\nconst STAY_MINUTES = 60;\n\n// 裝修後清潔類服務（必定需要回訪）\nconst CLEANING_PATTERNS = [\n  /裝修後清潔|裝清/i,\n  /入伙前清潔|入清/i,\n  /吉屋清潔|吉清/i,\n  /深層清潔|深清/i,\n];\n\n// 除甲醛服務模式\nconst FORMALDEHYDE_PATTERN = /除甲醛|甲A|甲B|甲C/i;\n\nfunction needsRevisit(name = '') {\n  const clean = name.replace(/[^一-龥A-Za-z0-9+＋]/g, '');\n  \n  // 檢查是否為清潔類服務（必定需要回訪）\n  const isCleaning = CLEANING_PATTERNS.some(pattern => pattern.test(clean));\n  if (isCleaning) {\n    return true;\n  }\n  \n  // 檢查是否包含除甲醛服務\n  const hasFormaldehyde = FORMALDEHYDE_PATTERN.test(name);\n  if (hasFormaldehyde) {\n    // 檢查是否為組合服務（如：裝清+甲C）\n    const isCombined = /[+＋]/.test(name) || CLEANING_PATTERNS.some(pattern => pattern.test(name));\n    \n    if (isCombined) {\n      // 組合服務：除甲醛在回訪時進行，需要回訪\n      console.log(`[回訪判斷] ${name} - 組合服務，需要回訪（除甲醛在回訪時進行）`);\n      return true;\n    } else {\n      // 單項除甲醛服務：直接在初訪進行，不需要回訪\n      console.log(`[回訪判斷] ${name} - 單項除甲醛服務，不需要回訪`);\n      return false;\n    }\n  }\n  \n  return false;\n}\n\nfunction toDate(dateStr, timeStr) {\n  if (!dateStr || !timeStr) {\n    return null;\n  }\n  const [y, m, d] = dateStr.split('-').map(Number);\n  const [h, min] = timeStr.split(':').map(Number);\n  if (!y || !m || !d || Number.isNaN(h) || Number.isNaN(min)) {\n    return null;\n  }\n  return new Date(y, m - 1, d, h, min, 0, 0);\n}\n\nfunction formatHM(date) {\n  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;\n}\n\nfunction addMinutes(date, minutes) {\n  return new Date(date.getTime() + minutes * 60000);\n}\n\n// @ts-ignore - items is provided by n8n runtime\nconst inputItems = (typeof $input !== 'undefined' && $input.all) ? $input.all() : (typeof items !== 'undefined' ? items : []);\nlet revisitCount = 0;\nconst results = inputItems.map(item => {\n  const record = { ...item.json };\n  record['是否需要回訪'] = false;\n  record['初訪與回訪中間空檔時間'] = '';\n  record['回訪時間及停留時長'] = '';\n\n  const isValidOrder = ['New Order', 'Regular Order'].includes(record['單類型']);\n  if (isValidOrder && needsRevisit(record['服務項目'])) {\n    const start = toDate(record['服務日期'], record['開始時間']);\n    const end = toDate(record['服務日期'], record['結束時間']);\n    if (start && end && end > start) {\n      const gapCandidate = addMinutes(end, GAP_MINUTES);\n      const fourPm = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 16, 0, 0, 0);\n      const revisitStart = gapCandidate < fourPm ? gapCandidate : fourPm;\n      const revisitEnd = addMinutes(revisitStart, STAY_MINUTES);\n      record['是否需要回訪'] = true;\n      record['初訪與回訪中間空檔時間'] = `${formatHM(end)}–${formatHM(revisitStart)}`;\n      record['回訪時間及停留時長'] = `${formatHM(revisitStart)}–${formatHM(revisitEnd)} (${STAY_MINUTES} 分)`;\n      revisitCount += 1;\n    }\n  }\n\n  return { json: record };\n});\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5888,
+        5792
+      ],
+      "id": "ff273f6d-1cce-48ca-b193-942b38e9821d",
+      "name": "判斷回訪預約",
+      "notesInFlow": "在 Function Item 內判斷是否屬於需要回訪的服務並計算回訪時段，避免 Code 節點重複處理。"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fixed n8n node code for Google Maps Distance Matrix API\n// Issues fixed:\n// 1. Changed 'uri' to 'url' (n8n httpRequest uses 'url')\n// 2. Added comprehensive error handling\n// 3. Added validation for empty destinations\n// 4. Added response structure validation\n// 5. Added better logging for debugging\n\nconst API_URL = 'https://maps.googleapis.com/maps/api/distancematrix/json';\nconst API_KEY = 'AIzaSyCujmDrdlHgPEaKxtn8CbpBNPKwhXIDUKs'; // TODO: Move to n8n credentials\nconst MAX_DEST = 25;\n\n// Validate input items\nconst inputItems = (typeof $input !== 'undefined' && $input.all) ? $input.all() : (typeof items !== 'undefined' ? items : []);\nif (!inputItems || !Array.isArray(inputItems) || inputItems.length === 0) {\n  console.log('No items to process');\n  return inputItems || [];\n}\n\nconst requestArea = items[0]?.json['地區'] ?? items[0]?.json['新預約地區'] ?? null;\n\nif (!requestArea) {\n  console.log('No request area found, skipping distance calculation');\n  return items;\n}\n\nconst combos = [];\nconst seen = new Set();\n\nfunction pushCombo(origin, dest) {\n  if (!origin || !dest) {\n    return;\n  }\n  const key = `${origin}::${dest}`;\n  if (seen.has(key)) {\n    return;\n  }\n  seen.add(key);\n  combos.push({ origin, dest });\n}\n\n// Collect all origin-destination pairs\ninputItems.forEach((item) => {\n  const serviceArea = item.json['服務地區'];\n  pushCombo(requestArea, serviceArea);\n  \n  const prevDistrict = item.json['前一單的地區'];\n  const nextDistrict = item.json['後一單的地區'];\n  \n  if (serviceArea && prevDistrict) {\n    pushCombo(serviceArea, prevDistrict);\n  }\n  if (serviceArea && nextDistrict) {\n    pushCombo(serviceArea, nextDistrict);\n  }\n});\n\nif (!combos.length) {\n  console.log('No distance combinations to calculate');\n  return items;\n}\n\n// Group by origin for batch requests\nconst groups = combos.reduce((acc, combo) => {\n  if (!acc.has(combo.origin)) {\n    acc.set(combo.origin, []);\n  }\n  acc.get(combo.origin).push(combo);\n  return acc;\n}, new Map());\n\nconst requests = [];\n\n// Build batch requests\nfor (const [origin, rows] of groups.entries()) {\n  for (let i = 0; i < rows.length; i += MAX_DEST) {\n    const chunk = rows.slice(i, i + MAX_DEST);\n    const destinations = chunk.map(c => c.dest).filter(d => d).join('|');\n    \n    // Validate destinations string\n    if (!destinations || destinations.trim() === '') {\n      console.warn(`Skipping request with empty destinations for origin: ${origin}`);\n      continue;\n    }\n    \n    const options = {\n      method: 'GET',\n      url: API_URL, // FIXED: Changed from 'uri' to 'url'\n      qs: {\n        origins: origin,\n        destinations: destinations,\n        key: API_KEY,\n        mode: 'driving',\n        language: 'zh-HK',\n        region: 'HK'\n      },\n      json: true\n    };\n    \n    // Wrap request in error handling\n    requests.push(\n      this.helpers.httpRequest(options)\n        .then(response => {\n          // Validate response structure\n          if (!response || !response.rows || !Array.isArray(response.rows) || response.rows.length === 0) {\n            console.error('Invalid response structure:', response);\n            return { response: null, chunk, error: 'Invalid response structure' };\n          }\n          \n          if (response.status !== 'OK' && response.error_message) {\n            console.error('API Error:', response.error_message);\n            return { response: null, chunk, error: response.error_message };\n          }\n          \n          return { response, chunk };\n        })\n        .catch(error => {\n          console.error(`Error fetching distance for origin ${origin}:`, error.message || error);\n          return { response: null, chunk, error: error.message || 'Unknown error' };\n        })\n    );\n  }\n}\n\n// Wait for all requests to complete\nconst responses = await Promise.all(requests);\n\nconst durationMap = new Map();\n\nfunction mapKey(origin, dest) {\n  return `${origin}::${dest}`;\n}\n\n// Process responses\nresponses.forEach(({ response, chunk, error }) => {\n  if (error) {\n    console.warn(`Skipping chunk due to error: ${error}`);\n    return;\n  }\n  \n  if (!response || !response.rows || !Array.isArray(response.rows) || response.rows.length === 0) {\n    console.warn('Skipping invalid response');\n    return;\n  }\n  \n  const elements = response.rows[0]?.elements || [];\n  \n  if (elements.length !== chunk.length) {\n    console.warn(`Mismatch: expected ${chunk.length} elements, got ${elements.length}`);\n  }\n  \n  chunk.forEach((combo, idx) => {\n    const element = elements[idx];\n    \n    if (!element) {\n      console.warn(`Missing element at index ${idx} for combo ${mapKey(combo.origin, combo.dest)}`);\n      return;\n    }\n    \n    if (element.status === 'OK' && element.duration) {\n      durationMap.set(mapKey(combo.origin, combo.dest), {\n        text: element.duration.text,\n        value: element.duration.value\n      });\n    } else {\n      console.warn(`Element status not OK for ${mapKey(combo.origin, combo.dest)}:`, element.status);\n    }\n  });\n});\n\n// Update items with duration data\ninputItems.forEach((item) => {\n  const serviceArea = item.json['服務地區'];\n  const prevDistrict = item.json['前一單的地區'];\n  const nextDistrict = item.json['後一單的地區'];\n  \n  if (requestArea && serviceArea) {\n    const duration = durationMap.get(mapKey(requestArea, serviceArea));\n    if (duration) {\n      item.json['與新預約行車時間'] = `${duration.text}鐘`;\n      item.json['drive_to_new_request_minutes'] = Math.round(duration.value / 60);\n    }\n  }\n  \n  if (serviceArea && prevDistrict) {\n    const duration = durationMap.get(mapKey(serviceArea, prevDistrict));\n    if (duration) {\n      item.json['與前一單地區行車時間'] = duration.text;\n    }\n  }\n  \n  if (serviceArea && nextDistrict) {\n    const duration = durationMap.get(mapKey(serviceArea, nextDistrict));\n    if (duration) {\n      item.json['與後一單地區行車時間'] = duration.text;\n    }\n  }\n});\n\nreturn items;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7008,
+        5312
+      ],
+      "id": "2162f696-e006-41e3-9e04-794deb54d9ca",
+      "name": "距離矩陣批次",
+      "notesInFlow": "一次收集所有需要的行車時間，透過 Google Distance Matrix 批次查詢並寫回每筆 CRM 項目，免去多個 HTTP 节點串聯。"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\n// @ts-ignore - items is provided by n8n runtime\nconst inputItems = (typeof $input !== 'undefined' && $input.all) ? $input.all() : (typeof items !== 'undefined' ? items : []);\nconst firstItem = inputItems[0]?.json || {};\n\n// @ts-ignore - items is provided by n8n runtime\nconst dataRows = Array.isArray(inputItems) ? inputItems.map(item => item.json) : [];\nif ((!Array.isArray(dataRows) || !dataRows.length) && typeof $json !== 'undefined') {\n  if (Array.isArray($json.data)) {\n    dataRows = $json.data;\n  } else if ($json.body && Array.isArray($json.body.data)) {\n    dataRows = $json.body.data;\n  }\n}\n\n// ✅ 正確的中文欄位名稱 (透傳欄位)\nconst passthroughKeys = [\n  'staffMeta',\n  'staffSheet',\n  'serviceMeta',\n  'serviceSheet',\n  '交通緩衝(分鐘)',\n  'submission_date'\n];\n\n/** @type {Record<string, any>} */\nconst passthrough = {};\nfor (let i = 0; i < passthroughKeys.length; i++) {\n  const key = passthroughKeys[i];\n  const value = firstItem[key];\n  if (value !== undefined) {\n    passthrough[key] = value;\n  }\n}\n\n// ✅ 正確的中文欄位名稱 (新預約欄位)\nconst requestFieldKeys = [\n  '品牌',\n  '服務',\n  '地區',\n  'district',  // English field name\n  '單位尺數 (平方尺)',\n  '問題嚴重程度(1-5級)',\n  '預估服務時間(分鐘)',\n  '回訪中間空檔(小時)',\n  '回訪停留時長(分鐘)',\n  '備註',\n  '提交日期',\n  '提交時間'\n];\n\n/** @type {Record<string, any>} */\nconst requestMeta = {};\nfor (let i = 0; i < requestFieldKeys.length; i++) {\n  const key = requestFieldKeys[i];\n  const value = firstItem[key];\n  if (value !== undefined) {\n    requestMeta[key] = value;\n  }\n}\n\nconst payload = {\n    ...requestMeta,\n    ...passthrough,\n    data: dataRows\n  };\n        return [{\n    json: payload\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6144,
+        5792
+      ],
+      "id": "5bb568fb-f9a0-4a89-a0fe-a6bb55f51b7c",
+      "name": "整合預約資料",
+      "notesInFlow": "將處理後的 CRM 項目與新客需求欄位打包為 data 陣列，提供給後續 AI Agent 使用。"
+    },
+    {
+      "parameters": {
+        "content": "Webhook 收到新預約後同時分成兩支：一支抓 CRM 7 日行程，一支保留新單資料，最後在距離矩陣節點整合。"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5888,
+        5056
+      ],
+      "id": "3b92a9ee-8dcf-497e-b98e-bf020ca78c68",
+      "name": "流程概覽"
+    },
+    {
+      "parameters": {
+        "content": "距離、回訪與 CRM 料整合後交給 AI Agent，並附帶 Google Sheet 工具與 GPT 模型做排程建議。"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7168,
+        5904
+      ],
+      "id": "9c754f03-5549-4872-bc03-5ac67a2b06a9",
+      "name": "AI 分析說明"
+    },
+    {
+      "parameters": {
+        "content": "1. 客戶預約請求：Webhook 接收原始新單資料（HTTP POST），輸入與輸出均為該 JSON；同時回傳 202 給前端。\n2. 抽出必要字段：Set 節點擷取品牌、服務、地區、估時等欄位；一支輸出給 CRM 分支，另一支直接進距離矩陣供新單使用。\n3. 獲取未來7D CRM排程：依提交日期呼叫 CRM API，輸入新單欄位，輸出 7 天行程 JSON。\n4. 拆分出每個預約：Code 節點拆分 CRM 回應並計算前/後訂單空檔，輸出逐筆 CRM 訂單。\n5. CRM-抽出必要字段：Set 節點抽出 CRM 訂單欄位（地區、職員、前後空檔等），再與新單一起進距離矩陣。\n6. 距離矩陣批次：Code 節點把新單與 CRM 訂單一起呼叫 Google Distance Matrix，輸出行車時間與通勤分鐘數。\n7. 判斷回訪預約：Code 節點判斷是否需回訪並計算回訪時間欄位。\n8. 整合預約資料：Code 節點將 CRM 訂單陣列 + 新單欄位整合給 AI 使用。\n9. 把資料轉到AI agent友好：整理 free slots、職員資訊等，輸出給 AI 支線。\n10. 職員住址 → Code2 → 職員地址：準備職員住址清單並查詢每位職員到新單的通勤時間。\n11. 整理各人的定與新單時間：Set 節點整理通勤字串，輸出給 AI Agent。\n12. AI Agent（含 GPT/Google Sheet 工具）：分析所有資料後輸出排程建議。\n13. Webhook回覆：Respond to Webhook，即時回覆 {status:\\\"queued\\\",…}，主流程在背景運行。",
+        "height": 336,
+        "width": 816
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6560,
+        4736
+      ],
+      "id": "1e5ad418-1e6f-4328-80d7-a8fd39370bfb",
+      "name": "完成流程說明"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        8528,
+        6240
+      ],
+      "id": "26000584-340b-4af7-a3e6-2a28b0e24381",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 從預約提取職員資料\n// 此節點從已取得的 CRM 預約資料中提取職員清單，替代不存在的 /api/staffs/availability API\n\n// 從輸入獲取預約資料，來自「整合預約資料」節點的 data 陣列\nlet appointmentData = [];\nconst inputItems = (typeof $input !== 'undefined' && $input.all) ? $input.all() : (typeof items !== 'undefined' ? items : []);\nif (Array.isArray(inputItems) && inputItems.length && Array.isArray(inputItems[0]?.json?.data)) {\n  appointmentData = inputItems[0].json.data;\n} else if (typeof $json !== 'undefined' && Array.isArray($json.data)) {\n  appointmentData = $json.data;\n}\n\n\ntry {\n  // 從 $input 獲取，標準 n8n 方式\n  if (typeof $input !== 'undefined' && $input) {\n    if (typeof $input.first === 'function') {\n      const firstItem = $input.first();\n      if (firstItem && firstItem.json && Array.isArray(firstItem.json.data)) {\n        appointmentData = firstItem.json.data;\n      }\n    } else if (typeof $input.all === 'function') {\n      const allItems = $input.all();\n      if (Array.isArray(allItems) && allItems.length > 0) {\n        const firstItem = allItems[0];\n        if (firstItem && firstItem.json && Array.isArray(firstItem.json.data)) {\n          appointmentData = firstItem.json.data;\n        }\n      }\n    }\n  }\n} catch (e) {\n  }\n\nconst staffMap = new Map();\nconst seenNames = new Set();\n\n// 從每個預約中提取職員資訊\nfor (const appt of appointmentData) {\n  // appt 可能是物件或已經包含 json 屬性\n  const appointment = appt?.json || appt || {};\n  \n  // 提取主要職員（從 user 物件或負責職員欄位）\n  const mainStaff = appointment.user || null;\n  const staffName = appointment['處理職員'] || (mainStaff ? (mainStaff.name || mainStaff.fullName || String(mainStaff)) : null);\n  \n  if (staffName) {\n    const cleanName = String(staffName).trim();\n    if (cleanName && !seenNames.has(cleanName)) {\n      seenNames.add(cleanName);\n      staffMap.set(cleanName, {\n        name: cleanName,\n        address: mainStaff?.address || mainStaff?.home_address || mainStaff?.base_location || '',\n        homeDistrict: mainStaff?.district || mainStaff?.home_district || null,\n        workStart: mainStaff?.work_start || mainStaff?.workStart || '09:00',\n        workEnd: mainStaff?.work_end || mainStaff?.workEnd || '18:00',\n        bufferMin: mainStaff?.buffer_min || mainStaff?.buffer || null,\n        skills: mainStaff?.skills || mainStaff?.skillTags || [],\n        status: mainStaff?.status || 'active',\n        isAvailable: mainStaff?.status !== 'inactive' && mainStaff?.status !== 'leave'\n      });\n    }\n  }\n  \n  // 提取額外職員（如果負責職員欄位包含多個職員，用 + 分隔）\n  if (staffName && (staffName.includes('+') || staffName.includes('＋'))) {\n    const names = String(staffName).split(/[+＋]/).map(n => n.trim()).filter(Boolean);\n    for (const name of names) {\n      if (name && !seenNames.has(name)) {\n        seenNames.add(name);\n        staffMap.set(name, {\n          name: name,\n          address: '',\n          homeDistrict: null,\n          workStart: '09:00',\n          workEnd: '18:00',\n          bufferMin: null,\n          skills: [],\n          status: 'active',\n          isAvailable: true\n        });\n      }\n    }\n  }\n}\n\n// 轉換為陣列格式\nconst staffList = Array.from(staffMap.values());\nconst staffMeta = staffList.map(staff => ({\n  name: staff.name,\n  work_start: staff.workStart,\n  work_end: staff.workEnd,\n  home_district: staff.homeDistrict,\n  buffer_min: staff.bufferMin,\n  skills: Array.isArray(staff.skills) ? staff.skills : [],\n  exclude: !staff.isAvailable\n}));\n\n// 如果沒有從預約中提取到職員資料，返回空陣列，將依賴 Google Sheets\nreturn [{\n  json: {\n    staffList: staffList.length > 0 ? staffList : [],\n    staffMeta: staffMeta.length > 0 ? staffMeta : [],\n    staffSource: {\n      totalFetched: staffList.length,\n      uniqueNames: staffList.length,\n      source: 'appointments',\n      note: staffList.length === 0 ? '未從預約資料中提取到職員資訊，將使用 Google Sheets 資料' : '從預約資料中提取職員資訊',\n      fetchedAt: new Date().toISOString()\n    }\n  }\n}];\nconsole.log('[從預約提取職員資料] Staff meta entries:', staffMeta.length);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6560,
+        5504
+      ],
+      "id": "676c5869-ce0e-4de0-a417-bf00dd245b12",
+      "name": "從預約提取職員資料",
+      "notesInFlow": "替代不存在的 /api/staffs/availability API。從已取得的 CRM 預約資料中提取職員資訊。如果沒有提取到資料，將依賴 Google Sheets 的職員設定。"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        7344,
+        5152
+      ],
+      "id": "caa822f8-14f3-42be-9f95-e7692f20457a",
+      "name": "合併CRM資料"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Fev9gNZ65LDN79xULz3VNjKdpxLv9wpNl9VVpMk9Wuk",
+          "mode": "list",
+          "cachedResultName": "排程預約資料",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Fev9gNZ65LDN79xULz3VNjKdpxLv9wpNl9VVpMk9Wuk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1959873114,
+          "mode": "list",
+          "cachedResultName": "人員時間及技能與事項",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Fev9gNZ65LDN79xULz3VNjKdpxLv9wpNl9VVpMk9Wuk/edit#gid=1959873114"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        6880,
+        5536
+      ],
+      "id": "fda4fd0c-5547-4ae0-9c1a-0a90338bea62",
+      "name": "Staff_Config",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UyeDwKkJiSG26Qg5",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 整理 Google Sheets 職員資料並解析開工/收工時段\n// ✅ UPDATED: Added debug logging and fuzzy 居住地 column matching\nconst items = $input.all();\nconst rawRows = Array.isArray(items) ? items.map(item => item.json || {}).filter(row => Object.keys(row).length > 0) : [];\n\n// ============================================\n// 🔍 DEBUG: Show all column names from Google Sheets\n// ============================================\nif (rawRows.length > 0) {\n  const firstRow = rawRows[0];\n  const columnNames = Object.keys(firstRow);\n  console.log('[整理Google職員資料] ========== DEBUG ==========');\n  console.log('[整理Google職員資料] 📋 All column names from Google Sheets:');\n  console.log('[整理Google職員資料]   ', columnNames.join(', '));\n  console.log('[整理Google職員資料] 📊 Total rows:', rawRows.length);\n\n  // Check for 居住地 related columns\n  const addressColumns = columnNames.filter(col =>\n    col.includes('居住') || col.includes('住址') || col.includes('地址') ||\n    col.includes('district') || col.includes('address') || col.includes('地區')\n  );\n  if (addressColumns.length > 0) {\n    console.log('[整理Google職員資料] ✅ Found address-related columns:', addressColumns.join(', '));\n  } else {\n    console.log('[整理Google職員資料] ⚠️ No address-related columns found!');\n  }\n\n  // Show sample values for first 3 rows\n  console.log('[整理Google職員資料] 📊 Sample data (first 3 rows):');\n  rawRows.slice(0, 3).forEach((row, i) => {\n    const name = row['職員'] || row['name'] || row['Name'] || '(no name)';\n    // Try to find home district with various column names\n    const possibleAddressKeys = ['居住地', '居住地區', '住址', '地址', 'home_district', 'homeDistrict', 'address'];\n    let homeDistrict = null;\n    let foundKey = null;\n    for (const key of possibleAddressKeys) {\n      if (row[key] && String(row[key]).trim()) {\n        homeDistrict = row[key];\n        foundKey = key;\n        break;\n      }\n    }\n    // Also try fuzzy match\n    if (!homeDistrict) {\n      for (const key of Object.keys(row)) {\n        if (key.includes('居住') || key.includes('住址')) {\n          homeDistrict = row[key];\n          foundKey = key + ' (fuzzy)';\n          break;\n        }\n      }\n    }\n    console.log(`[整理Google職員資料]   Row ${i}: ${name} → ${foundKey || '(no key)'}: \"${homeDistrict || '(empty)'}\"`);\n  });\n  console.log('[整理Google職員資料] ========== END DEBUG ==========');\n}\n\n// ============================================\n// Helper Functions\n// ============================================\n\n// 解析技能標籤函數\nconst parseSkills = (skillsStr) => {\n  if (!skillsStr || typeof skillsStr !== 'string') {\n    return [];\n  }\n  // 支援多種分隔符: , ， 、 | /\n  return skillsStr\n    .split(/[,，、|/]/)\n    .map(s => s.trim())\n    .filter(Boolean);\n};\n\n// 清理時間格式（移除空格，統一格式）\nconst cleanTimeStr = (timeStr) => {\n  if (!timeStr || typeof timeStr !== 'string') return null;\n  return timeStr.trim().replace(/\\s+/g, '');\n};\n\n// ✅ NEW: Fuzzy find home district from row with multiple possible column names\nconst findHomeDistrict = (row) => {\n  if (!row || typeof row !== 'object') return null;\n\n  // Priority 1: Exact column names\n  const exactKeys = ['居住地', '居住地區', '住址', '地址', 'home_district', 'homeDistrict'];\n  for (const key of exactKeys) {\n    const val = row[key];\n    if (val !== undefined && val !== null && String(val).trim()) {\n      return String(val).trim();\n    }\n  }\n\n  // Priority 2: Fuzzy match - columns containing these keywords\n  const fuzzyPatterns = ['居住', '住址', '地址'];\n  for (const key of Object.keys(row)) {\n    for (const pattern of fuzzyPatterns) {\n      if (key.includes(pattern)) {\n        const val = row[key];\n        if (val !== undefined && val !== null && String(val).trim()) {\n          console.log(`[整理Google職員資料] 🔍 Fuzzy matched column \"${key}\" for home district`);\n          return String(val).trim();\n        }\n      }\n    }\n  }\n\n  return null;\n};\n\n// ============================================\n// Process each row\n// ============================================\nconst rows = rawRows.map(row => {\n  // 直接從「開工時段」和「收工時段」欄位讀取\n  const workStart = cleanTimeStr(row['開工時段'] || row['work_start'] || '');\n  const workEnd = cleanTimeStr(row['收工時段'] || row['work_end'] || '');\n\n  const skillsStr = row['技能標籤'] || row['skills'] || row['技能'] || '';\n  const skills = parseSkills(skillsStr);\n\n  const maxJobsPerDay = parseInt(row['最大單數/天'] || row['max_jobs_per_day'] || '0') || null;\n\n  const hasWorkHours = !!(workStart && workEnd);\n\n  // ✅ NEW: Extract home district using fuzzy matching\n  const homeDistrict = findHomeDistrict(row);\n\n  // 保留原始數據 + 添加解析後的數據\n  return {\n    ...row,\n    // ✅ Ensure home_district is explicitly set at top level for downstream nodes\n    home_district: homeDistrict,\n    _parsed: {\n      work_start: workStart || '09:00',  // 預設 09:00\n      work_end: workEnd || '18:00',      // 預設 18:00\n      skills: skills.length > 0 ? skills : ['*'],  // 預設允許所有\n      max_jobs_per_day: maxJobsPerDay,\n      has_work_hours: hasWorkHours,\n      has_skills: skills.length > 0,\n      home_district: homeDistrict  // ✅ Also store in _parsed\n    }\n  };\n});\n\n// ============================================\n// Statistics\n// ============================================\nconst stats = {\n  total: rows.length,\n  with_work_hours: rows.filter(r => r._parsed.has_work_hours).length,\n  with_skills: rows.filter(r => r._parsed.has_skills).length,\n  with_max_jobs: rows.filter(r => r._parsed.max_jobs_per_day).length,\n  with_home_district: rows.filter(r => r._parsed.home_district).length  // ✅ NEW\n};\n\nconsole.log('[整理Google職員資料] 📊 Parse stats:', JSON.stringify(stats));\nconsole.log(`[整理Google職員資料] ✅ 有居住地的職員: ${stats.with_home_district}/${stats.total}`);\n\nif (stats.with_home_district === 0 && stats.total > 0) {\n  console.log('[整理Google職員資料] ⚠️⚠️⚠️ WARNING: No staff have home district data!');\n  console.log('[整理Google職員資料] 請確認 Google Sheets 有「居住地」欄位並填寫數據');\n}\n\nreturn [{\n  json: {\n    staffSheet: rows,\n    staffSheetCount: rows.length,\n    _parseStats: stats\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7136,
+        5520
+      ],
+      "id": "da099d54-ce0d-42a3-aad0-906e1d604db4",
+      "name": "整理Google職員資料"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 合併多個數據源（支持多輸入）\n// ✅ UPDATED: Use $('Service_Config').all() for direct node reference\nconst items = $input.all();\nconsole.log(`[合併Staff設定] 📊 Total inputs:`, items.length);\n\n// Input 0: Main data flow (CRM + Staff)\n\nlet crmData = [];\nlet staffData = [];\nlet googleData = [];\nlet serviceData = [];\n\n// ✅ FIXED: Get Service Sheet using direct node reference instead of input index\ntry {\n  const serviceNodeData = $('Service_Config').all();\n  if (serviceNodeData && serviceNodeData.length > 0) {\n    serviceData = serviceNodeData.map(item => item.json);\n    console.log(`[合併Staff設定] ✅ 從 Service_Config 節點獲取 serviceSheet:`, serviceData.length, '筆');\n  }\n} catch (e) {\n  console.log(`[合併Staff設定] ⚠️ 無法獲取節點 Service_Config:`, String(e));\n}\n\n// Fallback: prefer merged input serviceSheet (from 合併Service設定)\nif (!serviceData || serviceData.length === 0) {\n  for (const it of items) {\n    const j = (it && it.json) || {};\n    if (Array.isArray(j.serviceSheet) && j.serviceSheet.length > 0) {\n      serviceData = j.serviceSheet;\n      console.log(`[合併Staff設定] ✅ 從 merged input 取得 serviceSheet: ${serviceData.length} 筆`);\n      break;\n    }\n  }\n}\n\n// Get other data using node references\ntry {\n  const crmNodeData = $('整合預約資料').all();\n  if (crmNodeData && crmNodeData.length > 0) {\n    crmData = crmNodeData.map(item => item.json);\n  }\n} catch (e) {\n  console.log(`[合併Staff設定] ⚠️ 無法獲取節點 整合預約資料:`, String(e));\n}\n\ntry {\n  const staffNodeData = $('從預約提取職員資料').all();\n  if (staffNodeData && staffNodeData.length > 0) {\n    staffData = staffNodeData.map(item => item.json);\n  }\n} catch (e) {\n  console.log(`[合併Staff設定] ⚠️ 無法獲取節點 從預約提取職員資料:`, String(e));\n}\n\ntry {\n  const googleNodeData = $('整理Google職員資料').all();\n  if (googleNodeData && googleNodeData.length > 0) {\n    googleData = googleNodeData.map(item => item.json);\n  }\n} catch (e) {\n  console.log(`[合併Staff設定] ⚠️ 無法獲取節點 整理Google職員資料:`, String(e));\n}\n\n// 合併所有數據\nconst merged = {};\n\n// 1. 從 CRM 數據獲取基礎資料\nif (crmData.length > 0) {\n  Object.assign(merged, crmData[0]);\n}\n\n// 2. 從職員數據獲取 staffList 和 staffMeta\nif (staffData.length > 0) {\n  const staff = staffData[0];\n  if (Array.isArray(staff.staffList)) {\n    merged.staffList = staff.staffList;\n  }\n  if (Array.isArray(staff.staffMeta)) {\n    merged.staffMeta = staff.staffMeta;\n  }\n  if (staff.staffSource) {\n    merged.staffSource = staff.staffSource;\n  }\n}\n\n// 3. 從 Google Sheets 獲取 staffSheet\nif (googleData.length > 0) {\n  const google = googleData[0];\n  if (Array.isArray(google.staffSheet)) {\n    merged.staffSheet = google.staffSheet;\n    merged.staffSheetCount = google.staffSheet.length;\n    const parsedCount = google.staffSheet.filter(r => r._parsed).length;\n    console.log(`[合併Staff設定] ✅ staffSheet: ${google.staffSheet.length} 筆 (已解析: ${parsedCount})`);\n  } else {\n    merged.staffSheetCount = 0;\n  }\n} else {\n  merged.staffSheetCount = 0;\n}\n\n// ✅ 4. 從 Service_Config 獲取 serviceSheet\nif (serviceData.length > 0) {\n  // Google Sheets returns array of row objects\n  merged.serviceSheet = serviceData;\n  merged.serviceSheetCount = serviceData.length;\n  console.log(`[合併Staff設定] ✅ serviceSheet: ${serviceData.length} 筆`);\n\n  // Debug: Show column names\n  if (serviceData.length > 0) {\n    const firstRow = serviceData[0];\n    const keys = Object.keys(firstRow);\n    console.log(`[合併Staff設定] 📋 serviceSheet 欄位:`, keys.slice(0, 10).join(', '));\n\n    // Check if \"早上清潔\" column exists\n    if ('早上清潔' in firstRow) {\n      console.log(`[合併Staff設定] ✅ 找到 \"早上清潔\" 欄位`);\n      // Count how many services require morning cleaning\n      const morningCount = serviceData.filter(row => /^Y$/i.test(String(row['早上清潔'] || '').trim())).length;\n      console.log(`[合併Staff設定] 📊 需要早上清潔的服務: ${morningCount} 個`);\n    } else {\n      console.log(`[合併Staff設定] ⚠️ 未找到 \"早上清潔\" 欄位，可用欄位:`, keys.join(', '));\n    }\n  }\n} else {\n  merged.serviceSheet = [];\n  merged.serviceSheetCount = 0;\n  console.log(`[合併Staff設定] ⚠️ 沒有 serviceSheet 數據`);\n}\n\n// 最終統計\nconst dataLength = Array.isArray(merged['data']) ? merged['data'].length : 0;\nconst finalStats = {\n  dataLength,\n  staffListLength: merged.staffList ? merged.staffList.length : 0,\n  staffSheetCount: merged.staffSheetCount || 0,\n  serviceSheetCount: merged.serviceSheetCount || 0,\n  hasStaffMeta: !!merged.staffMeta\n};\n\nconsole.log('[合併Staff設定] ✅ 合併完成:', JSON.stringify(finalStats));\n\nreturn [{ json: merged }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7728,
+        5488
+      ],
+      "id": "da9434a0-9574-442f-a610-1ef437cf8951",
+      "name": "合併Staff設定",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\n// Input is now a merged item containing both Staff Data (from Input 1) and Maps Data (from Input 2)\n// ✅ UPDATED: Use index-based matching via staffOrder (Google returns results in same order)\n\nconst item = $input.first().json;\n\nconsole.log('[整理職員通勤] ========== 開始處理 ==========');\nconsole.log('[整理職員通勤] 📊 Input keys:', Object.keys(item).slice(0, 15));\n\n// 1. Get Staff List (from '把資料轉到AI agent友好')\nconst staffList = item.staffList || [];\nconst staffCfg = item.staffCfg || {};\nconsole.log('[整理職員通勤] 📊 staffList length:', staffList.length);\nif (staffList.length > 0) {\n  console.log('[整理職員通勤] 📊 First 3 staff:', staffList.slice(0, 3).map(s => s.name || s));\n}\n\n// 2. Get Maps Data (from '職員地址')\nconst rows = item.rows || [];\nconst staffAddresses = item.origin_addresses || [];\nconst jobAddresses = item.destination_addresses || [];\nconsole.log('[整理職員通勤] 📊 rows (Maps API) length:', rows.length);\nconsole.log('[整理職員通勤] 📊 staffAddresses length:', staffAddresses.length);\nconsole.log('[整理職員通勤] 📊 jobAddresses length:', jobAddresses.length);\n\n// ✅ FIX: Get staffOrder from _mapsParams for index-based matching\nconst mapsParams = item._mapsParams || {};\nconst staffOrder = mapsParams.staffOrder || [];\nconsole.log('[整理職員通勤] 📊 staffOrder length:', staffOrder.length);\nconsole.log('[整理職員通勤] 📋 staffOrder:', staffOrder.join(', '));\n\n// ========================================\n// ✅ FIX: Build staffCommute using INDEX-BASED matching\n// Google Maps returns results in the same order as input addresses\n// ========================================\nconst staffCommute = [];\n\n// Process each row from Google Maps using INDEX\nfor (let i = 0; i < rows.length; i++) {\n  const row = rows[i] || {};\n  const googleAddr = staffAddresses[i] || '';\n\n  // ✅ FIX: Use staffOrder[i] instead of address matching\n  const staffName = staffOrder[i] || null;\n\n  if (!staffName) {\n    console.log(`[整理職員通勤] ⚠️ No staff at index ${i} (Google addr: \"${googleAddr}\")`);\n    continue;\n  }\n\n  // Get commute time from Google Maps response\n  const element = (row.elements && row.elements.length > 0) ? row.elements[0] : null;\n\n  let duration = null;\n  let durationText = null;\n  let distanceText = null;\n\n  if (element && element.status === 'OK') {\n    if (element.duration) {\n      duration = element.duration.value;  // seconds\n      durationText = element.duration.text;\n    }\n    if (element.distance) {\n      distanceText = element.distance.text;\n    }\n  } else {\n    console.log(`[整理職員通勤] ⚠️ ${staffName}: Google Maps element status = ${element?.status || 'missing'}`);\n  }\n\n  const travelMinutes = (duration && duration > 0) ? Math.round(duration / 60) : null;\n\n  staffCommute.push({\n    name: staffName,\n    address: googleAddr,\n    rawAddress: staffCfg[staffName]?.home_district || '',\n    isAvailable: true,\n    travelText: durationText,\n    travelMinutes: travelMinutes,\n    distanceText: distanceText\n  });\n\n  console.log(`[整理職員通勤] ✅ [${i}] ${staffName}: ${travelMinutes || '?'} 分鐘 (${distanceText || '?'})`);\n}\n\n// ========================================\n// Also include staff without valid addresses (with null commute time)\n// ========================================\nconst staffWithCommute = new Set(staffCommute.map(c => c.name));\nfor (const staff of staffList) {\n  const staffName = typeof staff === 'string' ? staff : (staff?.name || '');\n  if (!staffName) continue;\n\n  if (!staffWithCommute.has(staffName)) {\n    const cfg = staffCfg[staffName] || {};\n    staffCommute.push({\n      name: staffName,\n      address: cfg.home_district || '',\n      rawAddress: cfg.home_district || '',\n      isAvailable: true,\n      travelText: null,\n      travelMinutes: null,  // No commute data\n      distanceText: null\n    });\n    console.log(`[整理職員通勤] ⚠️ ${staffName}: 無通勤數據 (地址: ${cfg.home_district || '無'})`);\n  }\n}\n\nconsole.log(`[整理職員通勤] 📊 最終 staffCommute: ${staffCommute.length} 位職員`);\nconsole.log(`[整理職員通勤] 📊 有通勤數據: ${staffCommute.filter(c => c.travelMinutes != null).length} 位`);\n\n// Calculate current date and window for AI validation\nconst now = new Date();\nconst hkNow = new Date(now.getTime() + 8 * 60 * 60000 - now.getTimezoneOffset() * 60000);\nconst currentDate = hkNow.toISOString().split('T')[0];\n\n// Get window dates from merged data if available\nconst windowStart = item.windowStart || null;\nconst windowEnd = item.windowEnd || null;\n\nconsole.log('[整理職員通勤] ========== 處理完成 ==========');\n\nreturn [{\n  json: {\n    ...item,\n    staffCommute,\n    staffAddresses,\n    jobAddresses,\n    elementsCount: rows.length,\n    currentDate,\n    windowStart,\n    windowEnd,\n    validDateRange: windowStart && windowEnd ? `${windowStart} to ${windowEnd}` : null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7520,
+        6080
+      ],
+      "id": "a03cb14b-1a3b-45aa-bae1-f619f1a55a5a",
+      "name": "整理職員通勤摘要"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate required fields on incoming payload (External Flow)\n// Accept BOTH payload formats:\n// - New: { brandName, serviceName, mainAreaName, subAreaName, ... }\n// - Legacy: { serviceType, service/mainService, region, subDistrict, ... }\nconst inputItems = (typeof $input !== 'undefined' && $input.all)\n  ? $input.all()\n  : (Array.isArray(items) ? items : []);\n\nif (!Array.isArray(inputItems) || inputItems.length === 0) {\n  throw new Error('Validate Input: no payload items received');\n}\n\nconsole.log('[Validate Input] Received items:', inputItems.length);\n\nfunction asTrimmedString(v) {\n  return typeof v === 'string' ? v.trim() : '';\n}\n\nfunction inferBrandName(data) {\n  const explicit = asTrimmedString(data.brandName);\n  if (explicit) return explicit;\n  const serviceType = asTrimmedString(data.serviceType) || 'pest';\n  return serviceType === 'cleaning' ? '匠人潔淨社' : '滅蟲職人';\n}\n\nfunction mapLegacyServiceName(raw) {\n  const svc = asTrimmedString(raw);\n  if (!svc) return '';\n  const mapping = {\n    '老鼠': '滅鼠服務',\n    '床蝨': '床蝨防治服務',\n    '白蟻': '白蟻防治服務',\n    '蟑螂': '蟑螂防治服務',\n    '螞蟻': '螞蟻防治服務',\n    '蜂巢移除': '蜂巢移除服務',\n    '蛀木蟲': '蛀木蟲防治服務',\n    '跳蚤': '跳蚤防治服務',\n    '煙甲蟲': '煙甲蟲防治服務',\n    '潮濕蟲': '潮濕蟲服務',\n    '禽蟎': '禽蟎防治服務',\n    '卜泥': '害蟲防治服務',\n    '姬薪蟲': '害蟲防治服務',\n    '癭蚋': '害蟲防治服務',\n    '跳蟲': '害蟲防治服務',\n    '衣魚': '害蟲防治服務',\n    '粉蟎': '害蟲防治服務',\n    '裝修後清潔': '裝修後清潔服務',\n    '入伙前清潔': '入伙前清潔服務',\n    '吉屋清潔': '清潔服務',\n    '深層清潔': '深層清潔服務',\n    '家居清潔': '定期清潔服務',\n    '地毯清潔(固定式)': '地毯清潔服務',\n    '除甲醛': '除甲醛服務',\n    '通渠': '通渠服務',\n  };\n  return mapping[svc] || svc;\n}\n\nfunction inferServiceName(data) {\n  const raw = (\n    asTrimmedString(data.serviceName) ||\n    asTrimmedString(data.service) ||\n    asTrimmedString(data.mainService)\n  );\n  return mapLegacyServiceName(raw);\n}\n\nfunction inferMainAreaName(data) {\n  const explicit = asTrimmedString(data.mainAreaName);\n  if (explicit) return explicit;\n  const region = asTrimmedString(data.region);\n  const subDistrict = asTrimmedString(data.subDistrict);\n  const combined = (region + subDistrict).trim();\n  return combined;\n}\n\ninputItems.forEach((item, index) => {\n  const json = item?.json ?? {};\n  const data = json.body ?? json;\n\n  if (!data || typeof data !== 'object') {\n    throw new Error(`Validate Input: invalid payload at index ${index}`);\n  }\n\n  console.log('[Validate Input] Checking payload keys', Object.keys(data));\n\n  const brandName = inferBrandName(data);\n  const serviceName = inferServiceName(data);\n  const mainAreaName = inferMainAreaName(data);\n\n  if (!brandName || !serviceName || !mainAreaName) {\n    console.error('[Validate Input] Missing required fields after fallback', {\n      index,\n      hasBrandName: !!brandName,\n      hasServiceName: !!serviceName,\n      hasMainAreaName: !!mainAreaName,\n      sample: {\n        brandName: data.brandName,\n        serviceName: data.serviceName,\n        mainAreaName: data.mainAreaName,\n        serviceType: data.serviceType,\n        service: data.service,\n        mainService: data.mainService,\n        region: data.region,\n        subDistrict: data.subDistrict,\n      },\n    });\n    throw new Error('Missing required fields: brandName/serviceName/mainAreaName (or legacy equivalents)');\n  }\n\n  // Mutate payload so downstream nodes can rely on the new keys\n  data.brandName = brandName;\n  data.serviceName = serviceName;\n  data.mainAreaName = mainAreaName;\n});\n\nreturn inputItems;"
+      },
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6224,
+        4928
+      ],
+      "id": "cd79489b-c4b7-490b-bc3f-aa316fb65791"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build dynamic prompts - Use ONLY filtered allCandidates\nconst items = $input.all();\nconst inputData = items[0].json;\n\n// Get current HK time\nconst now = new Date();\nconst hkNow = new Date(now.getTime() + 8 * 60 * 60000);\nconst currentDateTime = hkNow.toISOString().slice(0, 16).replace('T', ' ');\nconst currentDate = hkNow.toISOString().slice(0, 10);\n\n// Get window dates\nconst windowStart = inputData.windowStart || currentDate;\nconst windowEnd = inputData.windowEnd || currentDate;\n\n// Get service info\nconst serviceInfo = inputData['服務'] || inputData.service || '';\nconst serviceLocation = inputData['地區'] || inputData.district || '';\nconst estimatedTime = inputData['預估服務時間(分鐘)'] || '';\nconst submissionDate = inputData['提交日期'] || '';\nconst submissionTime = inputData['提交時間'] || '';\nconst brandName = inputData['品牌'] || '';\n\n// Get filtered candidates\nconst allCandidates = inputData.allCandidates || [];\nconst totalBeforeLimit = inputData.allCandidatesBeforeLimit || allCandidates.length;\n\n// Format candidates for better readability\nconst formattedCandidates = allCandidates.slice(0, 20).map((c, idx) => ({\n  index: idx + 1,\n  staff: c.staff,\n  date: c.date,\n  time: c.start + '-' + c.end,\n  score: c.qualityScore,\n  reasons: c.reasons || [],\n  constraints: c.constraints || {}\n}));\n\n// ✅ Optimized System Prompt\nconst systemPrompt = \"你是 PestKiller AI 排程助手，負責從已過濾的候選時段中挑選最佳排程方案。\\n\\n⚠️ 重要：所有需要的數據已在下方提供，請直接分析並輸出 JSON，不要調用任何外部工具或 API。\\n\\n📊 輸入數據\\n- allCandidates: 已完全過濾並評分的可用時段（\" + allCandidates.length + \" 個）\\n- 時段已按日期排序（從早到晚）\\n- 每位職員每天最多 2 個時段\\n- 包含 qualityScore（評分）和 reasons（評分原因）\\n\\n🎯 你的任務\\n從候選時段中選出 **最優排程方案**，考慮：\\n1. **分數優先**：優先選擇高分時段（hasNoJobsToday 的職員得分更高）\\n2. **公平分配**：避免同一職員連續多天被選中，讓更多職員有機會\\n3. **日期分散**：盡量覆蓋多個日期，而非集中在同一天\\n4. **每天 2 人**：每個日期選擇 2 位不同職員（若可用）\\n\\n⚠️ 限制條件\\n- 只能從 allCandidates 中選擇，不可創造新時段\\n- 日期範圍：\" + windowStart + \" 至 \" + windowEnd + \"\\n- 如果 allCandidates 為空，返回 { \\\"recommendations\\\": [], \\\"status\\\": \\\"no_recommendations\\\" }\\n\\n📋 輸出格式（純 JSON）\\n{\\n  \\\"recommendations\\\": [\\n    {\\n      \\\"rank\\\": 1,\\n      \\\"staff\\\": \\\"職員名稱\\\",\\n      \\\"date\\\": \\\"YYYY-MM-DD\\\",\\n      \\\"startTime\\\": \\\"HH:MM\\\",\\n      \\\"endTime\\\": \\\"HH:MM\\\",\\n      \\\"qualityScore\\\": 130,\\n      \\\"reasons\\\": [\\\"原因說明\\\"],\\n      \\\"constraints\\\": {}\\n    }\\n  ],\\n  \\\"meta\\\": {\\n    \\\"totalOptionsEvaluated\\\": \" + allCandidates.length + \",\\n    \\\"requiresHumanConfirmation\\\": true,\\n    \\\"disclaimer\\\": \\\"AI 建議需人工確認\\\"\\n  }\\n}\\n\\n重要：\\n- 必須按日期排序（從早到晚）\\n- constraints 必須是有效 JSON 物件（可為空 {}）\\n- 只輸出 JSON，無其他文字\\n- ⚠️ JSON 格式：不可有尾隨逗號（trailing comma）\";\n\n// ✅ Optimized User Prompt\nconst userPrompt = \"📋 新預約\\n品牌：\" + brandName + \" | 服務：\" + serviceInfo + \" | 地點：\" + serviceLocation + \"\\n時長：\" + estimatedTime + \" 分鐘 | 提交：\" + submissionDate + \" \" + submissionTime + \"\\n\\n📅 排程窗口：\" + windowStart + \" 至 \" + windowEnd + \"\\n\\n✅ 可用時段（共 \" + allCandidates.length + \" 個\" + (totalBeforeLimit > allCandidates.length ? \"，過濾前: \" + totalBeforeLimit + \" 個\" : \"\") + \"）\\n\\n\" + JSON.stringify(formattedCandidates, null, 2) + \"\\n\\n\" + (allCandidates.length > 20 ? \"\\n(僅顯示前 20 個，共 \" + allCandidates.length + \" 個可用時段)\\n\" : \"\") + \"\\n---\\n\\n🎯 請選擇最佳排程方案\\n- 優先考慮高分時段（hasNoJobsToday 職員優先）\\n- 公平分配給不同職員\\n- 每個日期選 2 位不同職員\\n- 按日期順序返回（從早到晚）\\n\\n返回 JSON 格式的排程建議。\";\n\nconsole.log('[System Prompt] 候選數:', allCandidates.length, '(過濾前:', totalBeforeLimit, ')');\nconsole.log('[System Prompt] 服務:', serviceInfo, '地點:', serviceLocation);\nconsole.log('[System Prompt] 窗口:', windowStart, '至', windowEnd);\n\nreturn [{\n  json: {\n    ...inputData,\n    system_prompt: systemPrompt,\n    user_prompt_debug: userPrompt\n  }\n}];\n"
+      },
+      "name": "Set System Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7488,
+        6656
+      ],
+      "id": "4082717e-32d8-42f5-9b4c-4d7c50e347fc"
+    },
+    {
+      "parameters": {
+        "content": "AI 資料準備 (重構後)：\n模組化程式碼以：\n1. 解析預約與假期\n2. 計算空閒時段\n3. 依可用性篩選職員\n4. 優化效能",
+        "height": 172,
+        "width": 300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6800,
+        5712
+      ],
+      "id": "4e9f3133-5293-4a66-8917-979479d06797",
+      "name": "Note: AI Data Prep"
+    },
+    {
+      "parameters": {
+        "content": "嚴格地址驗證：\n確保職員僅在有有效住址時才被排程。不再退回到服務地區。",
+        "height": 100,
+        "width": 250
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7712,
+        5328
+      ],
+      "id": "36418144-87fb-4c04-b314-f812d8215bf0",
+      "name": "Note: Address Validation"
+    },
+    {
+      "parameters": {
+        "content": "系統提示詞與上下文：\n- 外部化系統提示詞以便編輯。\n- 包含職員通勤時間與距離。",
+        "height": 100,
+        "width": 280
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7456,
+        5936
+      ],
+      "id": "339454ed-e76e-44fd-90d4-ffa6d0f71f09",
+      "name": "Note: System Prompt"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 合併地圖與職員資料 - Code Node\n// Input 0: 把資料轉到AI agent友好 (staffList, freeSlotsCalendar, etc.)\n// Input 1: 職員地址 (Google Maps API response)\n// ✅ FIX: Also get _mapsParams (including staffOrder) from 準備地圖查詢參數\n\nconst allInputs = $input.all();\nconsole.log('[合併地圖與職員] ========== 開始合併 ==========');\nconsole.log('[合併地圖與職員] 📊 Total inputs:', allInputs.length);\n\n// Get data from Input 0 (Staff Data)\nlet staffData = {};\ntry {\n  const input0 = $('把資料轉到AI agent友好').first();\n  if (input0 && input0.json) {\n    staffData = input0.json;\n    console.log('[合併地圖與職員] ✅ Input 0 (Staff): staffList length:', (staffData.staffList || []).length);\n  }\n} catch (e) {\n  console.log('[合併地圖與職員] ⚠️ Cannot get Input 0:', String(e));\n  // Fallback: try first input\n  if (allInputs.length > 0 && allInputs[0].json) {\n    staffData = allInputs[0].json;\n  }\n}\n\n// Get data from Input 1 (Google Maps)\nlet mapsData = {};\ntry {\n  const input1 = $('職員地址').first();\n  if (input1 && input1.json) {\n    mapsData = input1.json;\n    console.log('[合併地圖與職員] ✅ Input 1 (Maps): rows length:', (mapsData.rows || []).length);\n    console.log('[合併地圖與職員] 📊 origin_addresses:', (mapsData.origin_addresses || []).length);\n    console.log('[合併地圖與職員] 📊 destination_addresses:', (mapsData.destination_addresses || []).length);\n  }\n} catch (e) {\n  console.log('[合併地圖與職員] ⚠️ Cannot get Input 1:', String(e));\n  // Fallback: try second input if available\n  if (allInputs.length > 1 && allInputs[1].json) {\n    mapsData = allInputs[1].json;\n  }\n}\n\n// ✅ FIX: Get _mapsParams (including staffOrder) from 準備地圖查詢參數\nlet mapsParams = {};\ntry {\n  const prepNode = $('準備地圖查詢參數').first();\n  if (prepNode && prepNode.json && prepNode.json._mapsParams) {\n    mapsParams = prepNode.json._mapsParams;\n    console.log('[合併地圖與職員] ✅ Got _mapsParams from 準備地圖查詢參數');\n    console.log('[合併地圖與職員] 📊 staffOrder length:', (mapsParams.staffOrder || []).length);\n    console.log('[合併地圖與職員] 📋 staffOrder:', (mapsParams.staffOrder || []).join(', '));\n  }\n} catch (e) {\n  console.log('[合併地圖與職員] ⚠️ Cannot get _mapsParams from 準備地圖查詢參數:', String(e));\n}\n\n// Merge both data sources\nconst merged = {\n  ...staffData,\n  // Google Maps specific fields\n  rows: mapsData.rows || [],\n  origin_addresses: mapsData.origin_addresses || [],\n  destination_addresses: mapsData.destination_addresses || [],\n  status: mapsData.status || null,\n  // ✅ FIX: Include _mapsParams with staffOrder\n  _mapsParams: mapsParams\n};\n\nconsole.log('[合併地圖與職員] ✅ 合併完成');\nconsole.log('[合併地圖與職員] 📊 Final staffList:', (merged.staffList || []).length);\nconsole.log('[合併地圖與職員] 📊 Final rows:', (merged.rows || []).length);\nconsole.log('[合併地圖與職員] 📊 Final _mapsParams.staffOrder:', (merged._mapsParams?.staffOrder || []).length);\nconsole.log('[合併地圖與職員] ========== 合併結束 ==========');\n\nreturn [{ json: merged }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7216,
+        6112
+      ],
+      "id": "e97eb84c-1ab2-4613-a578-3899fb94167d",
+      "name": "合併地圖與職員資料"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        7552,
+        5232
+      ],
+      "id": "ea47bff0-f4a0-4e15-ac1d-6e35483fbbb1",
+      "name": "合併CRM資料1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced AI output parser with JSON repair\nconst items = $input.all();\nif (!items || items.length === 0) {\n  return [{\n    json: {\n      success: false,\n      error: 'No input data received',\n      recommendations: [],\n      formattedText: '❌ 錯誤：無輸入資料'\n    }\n  }];\n}\n\nconst now = new Date();\nconst hkNow = new Date(now.getTime() + 8 * 60 * 60000 - now.getTimezoneOffset() * 60000);\nconst currentDate = hkNow.toISOString().split('T')[0];\n\n// Helper: Clean and repair JSON from AI\nfunction repairJSON(text) {\n  if (!text) return text;\n  let cleaned = text.trim();\n\n  // Remove markdown code fences\n  if (cleaned.startsWith('```')) {\n    cleaned = cleaned.split('\\n').slice(1).join('\\n');\n  }\n  if (cleaned.endsWith('```')) {\n    cleaned = cleaned.split('\\n').slice(0, -1).join('\\n');\n  }\n\n  // Remove \"json\" language identifier\n  cleaned = cleaned.replace(/^json\\s*\\n/i, '');\n\n  // ✅ Fix trailing commas (common AI error)\n  // Remove commas before closing braces/brackets\n  cleaned = cleaned.replace(/,\\s*([}\\]])/g, '$1');\n\n  // Fix other common issues\n  cleaned = cleaned.replace(/\\bNaN\\b/g, 'null');\n  cleaned = cleaned.replace(/\\bundefined\\b/g, 'null');\n\n  return cleaned.trim();\n}\n\n// Parse AI output\nlet parsed;\nconst rawOutput = items[0].json.output || '';\n\ntry {\n  const cleaned = repairJSON(rawOutput);\n  parsed = JSON.parse(cleaned);\n\n  console.log('[解析AI輸出] ✅ JSON 解析成功');\n\n  // Validate and fix dates\n  if (parsed.recommendations && Array.isArray(parsed.recommendations)) {\n    for (const rec of parsed.recommendations) {\n      const recDate = rec.date || '';\n      const year = parseInt(recDate.substring(0, 4) || \"0\");\n\n      // Fix invalid dates\n      if (!recDate || recDate < currentDate || year < 2025) {\n        const tomorrow = new Date(hkNow.getTime() + 24 * 60 * 60000);\n        rec.date = tomorrow.toISOString().split('T')[0];\n        rec.reasons = rec.reasons || [];\n        rec.reasons.unshift(\"⚠️ 日期已調整 (原: \" + (recDate || '未知') + \")\");\n      }\n\n      // Ensure constraints is a valid object\n      if (!rec.constraints || typeof rec.constraints !== 'object') {\n        rec.constraints = {};\n      }\n\n      // Fix startTime/endTime format (AI sometimes returns full range)\n      if (rec.startTime && rec.startTime.includes('-')) {\n        const parts = rec.startTime.split('-');\n        rec.startTime = parts[0].trim();\n        if (!rec.endTime || rec.endTime === rec.startTime) {\n          rec.endTime = parts[1] ? parts[1].trim() : rec.startTime;\n        }\n      }\n      if (rec.endTime && rec.endTime.includes('-')) {\n        const parts = rec.endTime.split('-');\n        rec.endTime = parts[1] ? parts[1].trim() : parts[0].trim();\n      }\n    }\n  }\n} catch (e) {\n  console.log('[解析AI輸出] ❌ JSON 解析失敗:', String(e));\n  console.log('[解析AI輸出] 原始輸出:', rawOutput.substring(0, 500));\n\n  return [{\n    json: {\n      success: false,\n      error: String(e),\n      rawOutput: rawOutput,\n      recommendations: [],\n      formattedText: \"❌ AI 輸出解析失敗\\n\" + String(e)\n    }\n  }];\n}\n\n// Format recommendations\nconst recommendations = parsed.recommendations || [];\n\nif (recommendations.length === 0) {\n  return [{\n    json: {\n      success: true,\n      status: 'no_recommendations',\n      confirmationRequired: false,\n      disclaimer: 'AI 無法找到合適的排程建議',\n      recommendations: [],\n      formattedText: '⚠️ 未能找到合適的排程建議，請人手安排。',\n      summary: {\n        totalRecommendations: 0,\n        avgQualityScore: 0,\n        requiresHumanApproval: false\n      }\n    }\n  }];\n}\n\n// Format text output\nconst formattedText = recommendations.map((rec, idx) => {\n  const reasons = (rec.reasons || []).map(r => \"  - \" + r).join('\\n');\n\n  // Simple constraint display\n  const constraints = rec.constraints || {};\n  const constraintTags = [];\n  if (constraints.isFirstJob) constraintTags.push('首單');\n  if (constraints.isLastJob) constraintTags.push('尾單');\n  if (constraints.hasNoJobsToday) constraintTags.push('當天無工作');\n  if (constraints.isCleaningService) constraintTags.push('清潔');\n\n  return \"**建議排程 \" + (idx + 1) + \"**\\n\" +\n         \"- 職員：\" + rec.staff + \"\\n\" +\n         \"- 時間：\" + rec.date + \" \" + rec.startTime + \"–\" + rec.endTime + \"\\n\" +\n         \"- 分數：\" + rec.qualityScore + \"/100\\n\" +\n         (reasons ? \"- 原因：\\n\" + reasons : \"- 原因：無\") +\n         (constraintTags.length > 0 ? \"\\n- 標記：\" + constraintTags.join(', ') : '');\n}).join('\\n---\\n');\n\nconst avgScore = recommendations.reduce((sum, r) => sum + (r.qualityScore || 0), 0) / recommendations.length;\n\nconsole.log('[解析AI輸出] ✅ 成功解析 ' + recommendations.length + ' 個建議');\nconsole.log('[解析AI輸出] 📊 平均分數:', Math.round(avgScore * 10) / 10);\n\nreturn [{\n  json: {\n    success: true,\n    status: 'proposal',\n    confirmationRequired: true,\n    disclaimer: '✅ 以下為 AI 排程建議，務必由主管確認後才可執行。',\n    recommendations,\n    formattedText,\n    summary: {\n      totalRecommendations: recommendations.length,\n      avgQualityScore: Math.round(avgScore * 10) / 10,\n      highestScore: Math.max(...recommendations.map(r => r.qualityScore || 0)),\n      requiresHumanApproval: true\n    },\n    meta: parsed.meta || {}\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8192,
+        6064
+      ],
+      "id": "ca291aee-39f6-438f-8e4d-2a63e41abebe",
+      "name": "解析並格式化AI輸出"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 1: Build Service Config Map, Extract Request Info, and Build CapabilityMap\n// ✅ UPDATED v2: Added all 5 Filters\n// - Filter 1: 頭單8分鐘規限 (passed to step 3)\n// - Filter 2: 單與單15分鐘+30分鐘緩衝 (passed to step 3)\n// - Filter 3: 霧化項目15:00前 (enhanced detection)\n// - Filter 4: 深層清潔需監工 vs 一般清潔不需監工\n// - Filter 5: 早上清潔無限制 + 裝清需早開始\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const json = item.json;\n\n  // Extract Request Info\n  const serviceType = json['服務'] || json['服務項目'] || '';\n  const duration = Number(json['預估服務時間(分鐘)']) || 60;\n  const serviceLocation = json['地區'] || json['district'] || '';\n\n  console.log('[1️⃣ 建立配置] ========== 開始處理 ==========');\n  console.log(`[1️⃣ 建立配置] 服務類型: ${serviceType}`);\n  console.log(`[1️⃣ 建立配置] 服務地點: ${serviceLocation}`);\n\n  // ========================================\n  // Filter 4: Helper functions for supervisor classification\n  // ========================================\n  function requiresSupervisor(serviceName) {\n    const supervisorPatterns = [\n      /裝修後清潔|裝清/i,\n      /入伙前清潔|入清/i,\n      /吉屋清潔|吉清/i,\n      /深層清潔|深清/i\n    ];\n    return supervisorPatterns.some(pattern => pattern.test(serviceName));\n  }\n\n  function isGeneralCleaning(serviceName) {\n    // 「清🧹」或「清」單字 = 一般家居清潔，不需監工\n    return /^清[🧹]?$|^一般.*清潔$|^家居.*清潔$/i.test(serviceName);\n  }\n\n  // ========================================\n  // Filter 3 & 5: Service time restrictions\n  // ========================================\n  function needsEarlyStart(serviceName) {\n    // 需要早開始的服務（裝修後清潔需要乾燥時間等）\n    return /裝修後清潔|裝清|除甲醛|甲A|甲B|甲C/i.test(serviceName);\n  }\n\n  function isFoggingService(serviceName) {\n    // 霧化/煙霧服務需要15:00前\n    return /霧化|煙霧|ULV|噴霧/i.test(serviceName);\n  }\n\n  function isBedBugService(serviceName) {\n    return /床蝨/i.test(serviceName);\n  }\n\n  // ========================================\n  // Build Service Config Map\n  // ========================================\n  const serviceConfigMap = {};\n\n  if (json.serviceSheet && Array.isArray(json.serviceSheet)) {\n    console.log(`[1️⃣ 建立配置] 📊 使用 serviceSheet (共 ${json.serviceSheet.length} 筆)`);\n    \n    for (const row of json.serviceSheet) {\n      if (!row) continue;\n      const key = String(row[\"服務簡稱1\"] || row[\"服務項目\"] || \"\").trim();\n      if (!key) continue;\n\n      // ✅ Filter 5 (UPDATED): 早上清潔 = Y 表示這服務只能在早上 09:00-11:00 進行 (HARD FILTER)\n      const morningCleaningValue = String(row[\"早上清潔\"] || \"\").trim();\n      const isMorningOnlyRequired = /^Y$/i.test(morningCleaningValue);\n\n      // ✅ Filter 4: 監工需求分類\n      const needsSupervisor = requiresSupervisor(key);\n      const isGeneral = isGeneralCleaning(key);\n\n      // ✅ Filter 5: 需要早開始的服務\n      const mustStartEarly = needsEarlyStart(key);\n\n      // ✅ Filter 3: 霧化/床蝨服務\n      const isFogging = isFoggingService(key);\n      const isBedBug = isBedBugService(key);\n\n\n\n      // ✅ Alias keys: allow matching by full name and any short name columns\n      const aliasKeys = [\n        key,\n        row[\"服務項目\"],\n        row[\"服務簡稱1\"],\n        row[\"服務簡稱2\"],\n        row[\"服務簡稱3\"],\n        row[\"服務簡稱4\"],\n      ]\n        .filter(v => v != null)\n        .map(v => String(v).trim())\n        .filter(Boolean);\n      serviceConfigMap[key] = {\n        // ✅ Filter 5 (UPDATED): 早上清潔 = Y → 服務只能在 09:00-11:00 進行\n        morning_only_required: isMorningOnlyRequired,\n        morning_only_start: isMorningOnlyRequired ? '09:00' : null,\n        morning_only_end: isMorningOnlyRequired ? '11:00' : null,\n        is_morning_cleaning_service: false,  // 棄用舊邏輯\n        \n        // ✅ Filter 5: 裝修後清潔等需要早開始 (14:00前)\n        must_start_early: mustStartEarly,\n        max_start_time: mustStartEarly ? '12:00' : null,\n        early_start_reason: mustStartEarly ? '需要乾燥/處理時間' : null,\n        \n        // ✅ Filter 3: 霧化/床蝨服務 (15:00前)\n        is_fogging_service: isFogging,\n        is_bedbug_service: isBedBug,\n        requires_before_1500: isFogging || isBedBug,\n        \n        // ✅ Filter 4: 監工需求\n        requires_supervisor: needsSupervisor,\n        requires_initial_visit: needsSupervisor,\n        requires_revisit: needsSupervisor,\n        is_general_cleaning: isGeneral,\n        \n        // 🚫 棄用舊邏輯\n        morning_cleaning_only: false  // 不再使用此欄位\n      };\n\n      // Index config under all alias keys\n      for (const alias of aliasKeys) {\n        serviceConfigMap[alias] = serviceConfigMap[key];\n      }\n\n      // Also index under whitespace-normalized alias keys (for inputs like \"入伙前 清潔服務\")\n      for (const alias of aliasKeys) {\n        const normalizedAlias = alias.replace(/\\s+/g, '');\n        if (normalizedAlias && !serviceConfigMap[normalizedAlias]) {\n          serviceConfigMap[normalizedAlias] = serviceConfigMap[key];\n        }\n      }\n\n      // 詳細日誌\n      if (isMorningOnlyRequired) {\n        console.log(`[1️⃣ 建立配置] 🌅 ${key}: 早上清潔服務 (只能在 09:00-11:00 進行)`);\n      }\n      if (mustStartEarly) {\n        console.log(`[1️⃣ 建立配置] ⚠️ ${key}: 需早開始 (14:00前)`);\n      }\n      if (isFogging || isBedBug) {\n        console.log(`[1️⃣ 建立配置] 🕐 ${key}: 霧化/床蝨服務 (15:00前)`);\n      }\n      if (needsSupervisor) {\n        console.log(`[1️⃣ 建立配置] 👷 ${key}: 需要監工初訪及回訪`);\n      }\n      if (isGeneral) {\n        console.log(`[1️⃣ 建立配置] 🧹 ${key}: 一般清潔 (不需監工)`);\n      }\n    }\n  } else {\n    console.log(`[1️⃣ 建立配置] ⚠️ 沒有 serviceSheet 資料，使用服務名稱推斷`);\n  }\n\n  // ========================================\n  // Apply config to current service type\n  // ========================================\n  const normalizedServiceType = String(serviceType || '').replace(/\\s+/g, '').trim();\n  \n  // 如果當前服務不在 serviceSheet 中，根據名稱推斷\n  if (!serviceConfigMap[normalizedServiceType] && !serviceConfigMap[serviceType]) {\n    const needsSupervisor = requiresSupervisor(serviceType);\n    const isGeneral = isGeneralCleaning(serviceType);\n    const mustStartEarly = needsEarlyStart(serviceType);\n    const isFogging = isFoggingService(serviceType);\n    const isBedBug = isBedBugService(serviceType);\n    \n    const inferredConfig = {\n      morning_only_required: false,\n      morning_only_start: null,\n      morning_only_end: null,\n      is_morning_cleaning_service: false,\n      must_start_early: mustStartEarly,\n      max_start_time: mustStartEarly ? '12:00' : (isFogging || isBedBug ? '15:00' : null),\n      early_start_reason: mustStartEarly ? '需要乾燥/處理時間' : null,\n      is_fogging_service: isFogging,\n      is_bedbug_service: isBedBug,\n      requires_before_1500: isFogging || isBedBug,\n      requires_supervisor: needsSupervisor,\n      requires_initial_visit: needsSupervisor,\n      requires_revisit: needsSupervisor,\n      is_general_cleaning: isGeneral,\n      morning_cleaning_only: false\n    };\n    \n    serviceConfigMap[normalizedServiceType] = inferredConfig;\n    serviceConfigMap[serviceType] = inferredConfig;\n    \n    console.log(`[1️⃣ 建立配置] 🔍 根據名稱推斷服務配置: ${serviceType}`);\n    if (needsSupervisor) console.log(`[1️⃣ 建立配置]    - 需要監工: 是`);\n    if (mustStartEarly) console.log(`[1️⃣ 建立配置]    - 需早開始: 是 (14:00前)`);\n    if (isFogging || isBedBug) console.log(`[1️⃣ 建立配置]    - 霧化/床蝨: 是 (15:00前)`);\n  }\n\n  // ========================================\n  // Build Staff Capability Map from staffSheet\n  // ========================================\n  const capabilityMap = {};\n  const supervisorList = [];  // ✅ Filter 4: Track supervisors\n  const staffSheet = json.staffSheet || [];\n\n  if (Array.isArray(staffSheet)) {\n    for (const row of staffSheet) {\n      if (!row || typeof row !== 'object') continue;\n      const name = (row[\"職員\"] || row[\"name\"] || row[\"Name\"] || '').trim();\n      if (!name) continue;\n\n      // Get capability from \"可承接單類型(技能)\" field\n      const capabilityStr = String(\n        row[\"可承接單類型(技能)\"] ||\n        row[\"可承接單類型\"] ||\n        row[\"skills\"] ||\n        ''\n      ).trim();\n\n      if (capabilityStr) {\n        const capabilities = capabilityStr\n          .split(',')\n          .map(s => s.trim())\n          .filter(s => s.length > 0);\n        capabilityMap[name] = capabilities;\n        \n        // ✅ Filter 4: Check if this staff is a supervisor\n        const isSupervisor = capabilities.some(cap => \n          /監工|主管|Supervisor|初訪|回訪/i.test(cap)\n        );\n        if (isSupervisor) {\n          supervisorList.push(name);\n        }\n      } else {\n        capabilityMap[name] = [];\n      }\n    }\n  }\n\n  console.log(`[1️⃣ 建立配置] 服務配置數量: ${Object.keys(serviceConfigMap).length}`);\n  console.log(`[1️⃣ 建立配置] 職員能力映射: ${Object.keys(capabilityMap).length}位職員`);\n  console.log(`[1️⃣ 建立配置] 監工職員數量: ${supervisorList.length}位`);\n\n  // ========================================\n  // Output\n  // ========================================\n  const currentServiceConfig = serviceConfigMap[normalizedServiceType] || serviceConfigMap[serviceType] || {};\n  \n  console.log(`[1️⃣ 建立配置] 📋 當前服務「${serviceType}」的配置:`);\n  console.log(`[1️⃣ 建立配置]    - 需要監工: ${currentServiceConfig.requires_supervisor || false}`);\n  console.log(`[1️⃣ 建立配置]    - 一般清潔: ${currentServiceConfig.is_general_cleaning || false}`);\n  console.log(`[1️⃣ 建立配置]    - 早上清潔(09:00-11:00): ${currentServiceConfig.morning_only_required || false}`);\n  console.log(`[1️⃣ 建立配置]    - 需早開始: ${currentServiceConfig.must_start_early || false}`);\n  console.log(`[1️⃣ 建立配置]    - 霧化/床蝨(15:00前): ${currentServiceConfig.requires_before_1500 || false}`);\n  console.log('[1️⃣ 建立配置] ========== 處理完成 ==========');\n\n  results.push({\n    json: {\n      ...json,\n      serviceType,\n      duration,\n      serviceLocation,\n      serviceConfigMap,\n      normalizedServiceType,\n      capabilityMap,\n      supervisorList,\n      currentServiceConfig  // ✅ Pass current service config for easy access\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6800,
+        6400
+      ],
+      "id": "13c0b69d-9f98-4d3c-adc7-6f0241e2ad8b",
+      "name": "1️⃣ 建立配置映射"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\n\n// Step 2: Build Staff History Index\n\nconst CONFIG = {\n  MAX_CLEANING_PER_DAY: 2,\n};\n\nconst Helpers = {\n  toMin: (timeStr) => {\n    if (!timeStr) return null;\n    const [h, m] = String(timeStr).split(':').map(Number);\n    return h * 60 + m;\n  },\n\n  fromMin: (minutes) => {\n    const h = Math.floor(minutes / 60).toString().padStart(2, '0');\n    const m = (minutes % 60).toString().padStart(2, '0');\n    return `${h}:${m}`;\n  },\n};\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const json = item.json || {};\n  const machineData = json.machineData || [];\n  const staffCommute = json.staffCommute || [];\n  const serviceType = json.serviceType || '';\n\n  console.log('[建立索引] ========== 開始處理 ==========');\n\n  // Build Commute Map\n  const commuteMap = {};\n  for (const c of staffCommute) {\n    if (!c || !c.name) continue;\n    commuteMap[c.name] = c.travelMinutes != null ? c.travelMinutes : null;  // ✅ Keep null if no data\n  }\n\n  // ✅ DEBUG: Show commuteMap values\n  console.log(`[建立索引] 📊 commuteMap 職員數: ${Object.keys(commuteMap).length}`);\n  for (const [name, minutes] of Object.entries(commuteMap)) {\n    if (minutes !== null) {\n      console.log(`[建立索引]   ✅ ${name}: ${minutes} 分鐘`);\n    } else {\n      console.log(`[建立索引]   ⚠️ ${name}: 無通勤數據`);\n    }\n  }\n\n  // Build History By Staff Date\n  const historyByStaffDate = {};\n\n  for (const apt of machineData) {\n    if (!apt) continue;\n\n    const staffName = String(apt.staff || '').trim();\n    const names = staffName\n      .split(/[+＋]/)\n      .map((s) => s.trim())\n      .filter(Boolean);\n\n    let dateStr = apt.date || (apt.start_at ? apt.start_at.split('T')[0] : null);\n    if (!dateStr) continue;\n\n    let startMin = null;\n    let endMin = null;\n\n    if (apt.start_at && apt.end_at) {\n      startMin = Helpers.toMin(apt.start_at.substring(11, 16));\n      endMin = Helpers.toMin(apt.end_at.substring(11, 16));\n    } else if (apt.start_time && apt.end_time) {\n      startMin = Helpers.toMin(apt.start_time);\n      endMin = Helpers.toMin(apt.end_time);\n    }\n\n    for (const name of names) {\n      if (!historyByStaffDate[name]) historyByStaffDate[name] = {};\n      if (!historyByStaffDate[name][dateStr]) historyByStaffDate[name][dateStr] = [];\n\n      historyByStaffDate[name][dateStr].push({\n        ...apt,\n        _startMin: startMin,\n        _endMin: endMin,\n        _isLeave:\n          (apt.job_type && String(apt.job_type).toLowerCase() === 'leave') ||\n          (apt.title && String(apt.title).includes('請假')),\n      });\n    }\n  }\n\n  console.log(`[建立索引] 📊 historyByStaffDate 職員數: ${Object.keys(historyByStaffDate).length}`);\n  console.log('[建立索引] ========== 處理完成 ==========');\n\n  results.push({\n    json: {\n      ...json,\n      historyByStaffDate,\n      commuteMap,\n      isCleaningRequest: /清潔|清[🧹]?$|裝清|入清|吉清|深清|Clean/i.test(serviceType),\n    },\n  });\n}\n\n// n8n requires an array of items: [{ json: {...} }, ...]\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7200,
+        6288
+      ],
+      "id": "2c932b10-644f-4194-9f8a-b049e8d663ac",
+      "name": "2️⃣ 建立職員歷史索引"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\n// Step 3: Generate Candidates with All Filters\n// ✅ UPDATED v4: Filter 1 頭單通勤規則更新\n// - Filter 1: 頭單通勤≤8分鐘可正常排程，>8分鐘則延後3小時\n// - Filter 2: 單與單15分鐘+30分鐘緩衝\n// - Filter 3: 霧化/床蝨15:00前\n// - Filter 4: 監工需求 (handled in 🎯 過濾職員能力)\n// - Filter 5: 早上清潔無限制 + 裝清需早開始\n\nconst CONFIG = {\n  MAX_CLEANING_PER_DAY: 2,\n  FIRST_JOB_COMMUTE_THRESHOLD: 15,  // ✅ 頭單通勤時間上限（分鐘）- 15分鐘內不扣分\n  FIRST_JOB_DELAY_HOURS: 3,        // ✅ 超過通勤上限時，延後幾小時\n  JOB_TO_JOB_BUFFER: 30,           // Filter 2: 單與單緩衝30分鐘\n  DEFAULT_TRAVEL_TIME: 15,         // Filter 2: 預設行車時間15分鐘\n  // ✅ NEW: 清潔服務早上時段偏好 (Filter 6)\n  CLEANING_MORNING_CUTOFF: 720,    // 12:00 = 720 minutes, 清潔服務優先早上\n  SCORES: {\n    BASE: 100,\n    // Skill penalties\n    SKILL_PARTIAL: -100,\n    SKILL_NONE: -200,\n    // Commute penalties (Filter 1)\n    COMMUTE_9_15MIN: -50,\n    COMMUTE_16_30MIN: -75,\n    COMMUTE_OVER_30MIN: -100,\n    COMMUTE_NO_DATA: -30,\n    // Job gap penalties (Filter 2)\n    GAP_SHORT_1_15MIN: 0,          // ✅ 15分鐘內不扣分\n    GAP_SHORT_16_30MIN: -100,\n    GAP_SHORT_OVER_30MIN: -200,\n    // Timing penalties (Filter 3)\n    FOGGING_15_16: -100,\n    FOGGING_16_17: -150,\n    FOGGING_AFTER_17: -200,\n    // Revisit overflow penalties (NEW)\n    REVISIT_OVERFLOW_1_30MIN: -100,\n    REVISIT_OVERFLOW_31_60MIN: -150,\n    REVISIT_OVERFLOW_OVER_60MIN: -200,\n    // Cleaning job penalties (Filter 4)\n    CLEANING_2ND_JOB: -30,\n    CLEANING_3RD_JOB: -150,\n    // Morning cleaning penalties (Filter 5)\n    MORNING_LATE_1_30MIN: -75,\n    MORNING_LATE_31_60MIN: -125,\n    MORNING_LATE_OVER_60MIN: -200,\n    // ✅ NEW: 清潔服務早上時段偏好 (Filter 6)\n    CLEANING_MORNING_BONUS: 50,     // 早上時段加分\n    CLEANING_AFTERNOON_PENALTY: -30, // 下午時段扣分\n    CLEANING_EVENING_PENALTY: -80,   // 傍晚時段扣分\n    // Work hours violation\n    WORK_HOURS_VIOLATION: -200,\n    PREF_NEAR_HOME: 10,\n    PENALTY_FAR_HOME: -10,\n    PREF_NO_JOBS_TODAY: 30,\n  }\n};\n\n// Define Helpers locally\nconst Helpers = {\n  toMin: (timeStr) => {\n    if (!timeStr) return null;\n    const [h, m] = String(timeStr).split(':').map(Number);\n    return h * 60 + m;\n  },\n  fromMin: (minutes) => {\n    const h = Math.floor(minutes / 60).toString().padStart(2, '0');\n    const m = (minutes % 60).toString().padStart(2, '0');\n    return `${h}:${m}`;\n  }\n};\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const json = item.json;\n  const freeSlotsCalendar = json.freeSlotsCalendar || [];\n  const historyByStaffDate = json.historyByStaffDate || {};\n  const commuteMap = json.commuteMap || {};\n  const serviceType = json.serviceType || '';\n  const duration = json.duration || 60;\n  const isCleaningRequest = json.isCleaningRequest;\n  const serviceConfigMap = json.serviceConfigMap || {};\n  const normalizedServiceType = json.normalizedServiceType || '';\n  const currentServiceConfig = json.currentServiceConfig || {};\n  const jobTravelMap = json.jobTravelMap || {};  // Filter 2\n  const serviceLocation = json.serviceLocation || json['地區'] || '';\n\n  console.log('[3️⃣ 生成並過濾] ========== 開始處理 ==========');\n  console.log(`[3️⃣ 生成並過濾] 服務: ${serviceType}, 時長: ${duration}分`);\n  console.log(`[3️⃣ 生成並過濾] 服務配置:`, JSON.stringify(currentServiceConfig));\n\n  const filteredCalendar = freeSlotsCalendar.map(staffCal => {\n    const staffName = staffCal.staff;\n    const commuteMin = commuteMap[staffName] || 30;\n\n    const processedDays = staffCal.days.map(dayObj => {\n      const date = dayObj.date;\n      const dailyHistory = historyByStaffDate[staffName]?.[date] || [];\n\n      // Rule 1: Leave Check\n      const isLeave = dailyHistory.some(a => a._isLeave) || dayObj.holiday;\n      if (isLeave) {\n        return {\n          ...dayObj,\n          free_slots: [],\n          candidates: [],\n          status: 'blocked_leave',\n          reason: 'Staff on leave/holiday'\n        };\n      }\n\n      // Rule 2: Cleaning Limit - 清潔單每天不超過2單\n      if (isCleaningRequest) {\n        const cleaningCount = dailyHistory.filter(apt => /清潔|清[🧹]?$|裝清|入清|吉清|深清|Clean/i.test(apt.service || apt.title || '')).length;\n        if (cleaningCount >= CONFIG.MAX_CLEANING_PER_DAY) {\n          console.log(`[3️⃣ 清潔限制] ❌ ${staffName} ${date}: 已有 ${cleaningCount} 單清潔工作，超過上限 ${CONFIG.MAX_CLEANING_PER_DAY}`);\n          return {\n            ...dayObj,\n            free_slots: [],\n            candidates: [],\n            status: 'blocked_limit',\n            reason: `清潔工作已達上限 (${cleaningCount}/${CONFIG.MAX_CLEANING_PER_DAY})`\n          };\n        } else if (cleaningCount > 0) {\n          console.log(`[3️⃣ 清潔限制] ⚠️ ${staffName} ${date}: 已有 ${cleaningCount} 單清潔工作，可再接 ${CONFIG.MAX_CLEANING_PER_DAY - cleaningCount} 單`);\n        }\n      }\n\n      // Get work hours\n      const workStartTime = dayObj.work_start;\n      const workEndTime = dayObj.work_end;\n      const workStartMin = Helpers.toMin(workStartTime);\n      const workEndMin = Helpers.toMin(workEndTime);\n\n      // Generate Candidates\n      const candidates = [];\n      const availableSlots = dayObj.free_slots || [];\n      let totalSkipped = 0;\n      let skippedReasons = [];\n\n      // Filter 2: Get existing jobs for this staff on this date\n      const travelKey = `${staffName}|${date}`;\n      const existingJobs = jobTravelMap[travelKey] || [];\n\n      availableSlots.forEach(slot => {\n        const slotStart = Helpers.toMin(slot.start);\n        const slotEnd = Helpers.toMin(slot.end);\n        const slotDuration = slot.minutes;\n\n        if (slotDuration < duration) return;\n\n        // ✅ Generate multiple candidate start times (every 180 minutes = 3 hours) within the slot\n        const candidateStarts = [];\n        for (let startMin = slotStart; startMin + duration <= slotEnd; startMin += 180) {\n          candidateStarts.push(startMin);\n        }\n\n        // If no candidates fit, skip this slot\n        if (candidateStarts.length === 0) return;\n\n        // Process each candidate start time\n        candidateStarts.forEach(candidateStart => {\n          let candidateEnd = candidateStart + duration;\n          // Initialize scoring (must be before any score/reasons/constraints usage)\n          let score = CONFIG.SCORES.BASE;\n          const reasons = [];\n          const constraints = {};\n\n\n        // Rule 0: Work Hours Validation\n        if (workStartMin !== null && workEndMin !== null) {\n          if (candidateStart < workStartMin) {\n            totalSkipped++;\n            skippedReasons.push(`早於開工時間 ${workStartTime}`);\n            return;\n          }\n          if (candidateEnd > workEndMin) {\n            totalSkipped++;\n            skippedReasons.push(`晚於收工時間 ${workEndTime}`);\n            return;\n          }\n        }\n\n        // ========================================\n        // ✅ Filter 3: 霧化/床蝨服務15:00前 (HARD FILTER)\n        // ========================================\n        // ========================================\n        // ✅ Filter 3 (Soft): Fogging/Bedbug Timing Penalty\n        // ========================================\n        if (currentServiceConfig.requires_before_1500 || currentServiceConfig.is_fogging_service || currentServiceConfig.is_bedbug_service) {\n          if (candidateStart >= 1020) {  // After 17:00\n            score += CONFIG.SCORES.FOGGING_AFTER_17;\n            reasons.push(`霧化/床蝨太晚 (${Helpers.fromMin(candidateStart)}，${CONFIG.SCORES.FOGGING_AFTER_17}分)`);\n            constraints.foggingAfter17 = true;\n            console.log(`[3️⃣ Filter3] ⚠️ ${staffName} ${date}: 霧化/床蝨 ${Helpers.fromMin(candidateStart)} > 17:00 → ${CONFIG.SCORES.FOGGING_AFTER_17}分`);\n          } else if (candidateStart >= 960) {  // 16:01-17:00\n            score += CONFIG.SCORES.FOGGING_16_17;\n            reasons.push(`霧化/床蝨較晚 (${Helpers.fromMin(candidateStart)}，${CONFIG.SCORES.FOGGING_16_17}分)`);\n            constraints.fogging16_17 = true;\n            console.log(`[3️⃣ Filter3] ⚠️ ${staffName} ${date}: 霧化/床蝨 ${Helpers.fromMin(candidateStart)} (16:01-17:00) → ${CONFIG.SCORES.FOGGING_16_17}分`);\n          } else if (candidateStart >= 900) {  // 15:01-16:00\n            score += CONFIG.SCORES.FOGGING_15_16;\n            reasons.push(`霧化/床蝨稍晚 (${Helpers.fromMin(candidateStart)}，${CONFIG.SCORES.FOGGING_15_16}分)`);\n            constraints.fogging15_16 = true;\n            console.log(`[3️⃣ Filter3] ⚠️ ${staffName} ${date}: 霧化/床蝨 ${Helpers.fromMin(candidateStart)} (15:01-16:00) → ${CONFIG.SCORES.FOGGING_15_16}分`);\n          } else {\n            console.log(`[3️⃣ Filter3] ✅ ${staffName} ${date}: 霧化/床蝨 ${Helpers.fromMin(candidateStart)} ≤ 15:00 → OK`);\n          }\n        }\n\n        // ========================================\n        // ✅ Filter 5 (UPDATED v2): 早上清潔服務必須在 09:00-11:00 進行 (HARD FILTER)\n        // - 開始時間必須 >= 09:00 且 < 11:00\n        // - 結束時間必須 <= 11:00\n        // ========================================\n        if (currentServiceConfig.morning_only_required) {\n          const morningStart = Helpers.toMin(currentServiceConfig.morning_only_start || '09:00');\n          const morningEnd = Helpers.toMin(currentServiceConfig.morning_only_end || '11:00');\n          \n          console.log(`[3️⃣ Filter5] 🔍 ${staffName} ${date}: 檢查早上清潔限制 - 候選 ${Helpers.fromMin(candidateStart)}-${Helpers.fromMin(candidateEnd)}, 允許範圍 ${Helpers.fromMin(morningStart)}-${Helpers.fromMin(morningEnd)}`);\n          \n          // HARD FILTER: Reject if candidate is outside 09:00-11:00\n          // ✅ FIXED: Added explicit check for candidateStart >= morningEnd (starts at or after 11:00)\n          if (candidateStart < morningStart || candidateStart >= morningEnd || candidateEnd > morningEnd) {\n            totalSkipped++;\n            const rejectReason = candidateStart < morningStart ? '開始時間早於09:00' : \n                                 candidateStart >= morningEnd ? '開始時間晚於或等於11:00' : \n                                 '結束時間晚於11:00';\n            skippedReasons.push(\n              `早上清潔服務必須在 ${currentServiceConfig.morning_only_start}-${currentServiceConfig.morning_only_end} 進行 (${rejectReason}, 候選: ${Helpers.fromMin(candidateStart)}-${Helpers.fromMin(candidateEnd)})`\n            );\n            console.log(`[3️⃣ Filter5] ❌ ${staffName} ${date}: 早上清潔服務 ${Helpers.fromMin(candidateStart)}-${Helpers.fromMin(candidateEnd)} 超出 09:00-11:00 (${rejectReason}) → 跳過`);\n            return;\n          }\n          console.log(`[3️⃣ Filter5] ✅ ${staffName} ${date}: 早上清潔服務 ${Helpers.fromMin(candidateStart)}-${Helpers.fromMin(candidateEnd)} 在 09:00-11:00 → OK`);\n        }\n        else if (currentServiceConfig.must_start_early) {\n          const maxStartTime = currentServiceConfig.max_start_time || '12:00';\n          const maxStartMin = Helpers.toMin(maxStartTime);\n\n          if (candidateStart >= maxStartMin) {\n            totalSkipped++;\n            skippedReasons.push(\n              `${serviceType} 必須在 ${maxStartTime} 前開始 (候選: ${Helpers.fromMin(candidateStart)}) - ${currentServiceConfig.early_start_reason || '需要早開始'}`\n            );\n            return;\n          }\n        }\n\n        // Find previous/next job\n        const sortedHistory = [...dailyHistory].sort((a,b) => (a._startMin || 0) - (b._startMin || 0));\n        const reversedHistory = [...sortedHistory].reverse();\n        const prevJob = reversedHistory.find(a => a._endMin && a._endMin <= candidateStart);\n        const nextJob = sortedHistory.find(a => a._startMin && a._startMin >= candidateEnd);\n\n        // Initialize scoring\n\n        // ✅ NEW: Apply skill mismatch penalty\n        const staffMatchQuality = staffCal._skillMatchQuality || 'exact';\n        if (staffMatchQuality === 'partial') {\n          score -= 100;  // Deduct 100 points for partial skill match\n          reasons.push('⚠️ 技能部分匹配 (扣100分)');\n          constraints.skillPartialMatch = true;\n          console.log(`[3️⃣ Scoring] ⚠️ ${staffName} ${date}: 技能部分匹配，扣100分`);\n        } else if (staffMatchQuality === 'none') {\n          score -= 200;  // Deduct 200 points for no skill match\n          reasons.push('❌ 技能不匹配 (扣200分)');\n          constraints.skillNoMatch = true;\n          console.log(`[3️⃣ Scoring] ❌ ${staffName} ${date}: 技能不匹配，扣200分`);\n        } else if (staffMatchQuality === 'exact') {\n          // No penalty for exact match\n          console.log(`[3️⃣ Scoring] ✅ ${staffName} ${date}: 技能精確匹配`);\n        }\n\n        // ========================================\n        // ✅ NEW: Revisit Time Overflow Check\n        // ========================================\n        if (currentServiceConfig.requires_revisit) {\n          const revisitDelay = json.revisitDelay || json['回訪中間空檔(小時)'] || 2;  // hours\n          const revisitDuration = json.revisitDuration || json['回訪停留時長(分鐘)'] || 60;  // minutes\n\n          const revisitDelayMin = revisitDelay * 60;\n          const revisitStartMin = candidateEnd + revisitDelayMin;\n          const revisitEndMin = revisitStartMin + revisitDuration;\n\n          const workEndMin = staffCal.work_end ? Helpers.toMin(staffCal.work_end) : 22 * 60;  // default 22:00\n\n          if (revisitEndMin > workEndMin) {\n            const overflowMin = revisitEndMin - workEndMin;\n            let penalty = 0;\n            let reason = '';\n\n            if (overflowMin <= 30) {\n              penalty = CONFIG.SCORES.REVISIT_OVERFLOW_1_30MIN;\n              reason = `回訪超時${overflowMin}分 (${penalty}分)`;\n            } else if (overflowMin <= 60) {\n              penalty = CONFIG.SCORES.REVISIT_OVERFLOW_31_60MIN;\n              reason = `回訪超時${overflowMin}分 (${penalty}分)`;\n            } else {\n              penalty = CONFIG.SCORES.REVISIT_OVERFLOW_OVER_60MIN;\n              reason = `回訪超時${overflowMin}分 (${penalty}分)`;\n            }\n\n            score += penalty;\n            reasons.push(reason);\n            constraints.revisitOverflow = overflowMin;\n            console.log(`[3️⃣ Revisit] ⚠️ ${staffName} ${date}: 回訪會在 ${Helpers.fromMin(revisitEndMin)} 結束，超過收工時間 ${Helpers.fromMin(workEndMin)}，扣${-penalty}分`);\n          } else {\n            console.log(`[3️⃣ Revisit] ✅ ${staffName} ${date}: 回訪時間OK (結束於 ${Helpers.fromMin(revisitEndMin)})`);\n          }\n        }\n\n        const isFirstJob = !prevJob;\n        const isLastJob = !nextJob;\n\n        if (isFirstJob) constraints.isFirstJob = true;\n        if (isLastJob) constraints.isLastJob = true;\n\n        // ========================================\n        // ✅ Filter 1: 頭單通勤規限 (SOFT FILTER for must_start_early services)\n        // 通勤 ≤ 8分鐘: 可正常排程\n        // 通勤 > 8分鐘: \n        //   - 一般服務: 必須在「開工時間 + 通勤時間 + 30分鐘緩衝」後開始 (HARD)\n        //   - must_start_early服務: 減分但不拒絕 (SOFT)\n        // ========================================\n        if (isFirstJob) {\n          const hasRealCommuteData = commuteMap[staffName] !== undefined && commuteMap[staffName] !== null;\n          const commuteBuffer = 30;  // 30分鐘緩衝\n          const isSoftFilterMode = currentServiceConfig.must_start_early || currentServiceConfig.is_morning_cleaning_service;\n\n          if (hasRealCommuteData) {\n            if (commuteMin > CONFIG.FIRST_JOB_COMMUTE_THRESHOLD) {\n              // 通勤超過8分鐘，計算最早開始時間\n              const earliestStartMin = workStartMin + commuteMin + commuteBuffer;\n\n              if (candidateStart < earliestStartMin) {\n                if (isSoftFilterMode) {\n                  // SOFT FILTER: 減分但不拒絕\n                  const penaltyMinutes = earliestStartMin - candidateStart;\n                  score -= Math.min(penaltyMinutes, 60);  // 最多扣60分\n                  reasons.push(`⚠️ 頭單通勤較遠 (${commuteMin}分)，建議 ${Helpers.fromMin(earliestStartMin)} 後開始`);\n                  constraints.commuteWarning = true;\n                  console.log(`[3️⃣ Filter1] ⚠️ ${staffName} ${date}: 頭單通勤 ${commuteMin}分，候選 ${Helpers.fromMin(candidateStart)} < 建議 ${Helpers.fromMin(earliestStartMin)} → 減分 -${Math.min(penaltyMinutes, 60)}`);\n                } else {\n                  // HARD FILTER: 拒絕\n                  totalSkipped++;\n                  skippedReasons.push(\n                    `頭單通勤過遠 (${commuteMin}分 > ${CONFIG.FIRST_JOB_COMMUTE_THRESHOLD}分)，必須在 ${Helpers.fromMin(earliestStartMin)} 後開始 (候選: ${Helpers.fromMin(candidateStart)})`\n                  );\n                  console.log(`[3️⃣ Filter1] ❌ ${staffName} ${date}: 頭單通勤 ${commuteMin}分 > ${CONFIG.FIRST_JOB_COMMUTE_THRESHOLD}分，候選 ${Helpers.fromMin(candidateStart)} < 最早 ${Helpers.fromMin(earliestStartMin)} → 跳過`);\n                  return;\n                }\n              } else {\n                // 通過檢查\n                reasons.push(`✅ 頭單通勤較遠 (${commuteMin}分)，已在 ${Helpers.fromMin(earliestStartMin)} 後開始`);\n                constraints.firstJobDelayed = true;\n                console.log(`[3️⃣ Filter1] ✅ ${staffName} ${date}: 頭單通勤 ${commuteMin}分，候選 ${Helpers.fromMin(candidateStart)} ≥ ${Helpers.fromMin(earliestStartMin)} → OK`);\n              }\n            } else {\n              // 通勤 ≤ 8分鐘，可正常排程\n              reasons.push(`✅ 頭單通勤OK (${commuteMin}分 ≤ ${CONFIG.FIRST_JOB_COMMUTE_THRESHOLD}分)`);\n              console.log(`[3️⃣ Filter1] ✅ ${staffName} ${date}: 頭單通勤 ${commuteMin}分 ≤ ${CONFIG.FIRST_JOB_COMMUTE_THRESHOLD}分 → OK`);\n            }\n          } else {\n            // 無通勤數據，預設使用30分鐘 + 緩衝\n            const defaultCommuteMin = 30;\n            const earliestStartMin = workStartMin + defaultCommuteMin + commuteBuffer;\n\n            if (candidateStart < earliestStartMin) {\n              if (isSoftFilterMode) {\n                // SOFT FILTER: 減分但不拒絕\n                const penaltyMinutes = earliestStartMin - candidateStart;\n                score -= Math.min(penaltyMinutes, 40);  // 無數據時較少扣分\n                reasons.push(`⚠️ 頭單無通勤數據，建議 ${Helpers.fromMin(earliestStartMin)} 後開始`);\n                constraints.commuteWarning = true;\n                console.log(`[3️⃣ Filter1] ⚠️ ${staffName} ${date}: 無通勤數據，候選 ${Helpers.fromMin(candidateStart)} < 建議 ${Helpers.fromMin(earliestStartMin)} → 減分 -${Math.min(penaltyMinutes, 40)}`);\n              } else {\n                // HARD FILTER: 拒絕\n                totalSkipped++;\n                skippedReasons.push(\n                  `頭單無通勤數據，預設必須在 ${Helpers.fromMin(earliestStartMin)} 後開始 (候選: ${Helpers.fromMin(candidateStart)})`\n                );\n                console.log(`[3️⃣ Filter1] ⚠️ ${staffName} ${date}: 無通勤數據，候選 ${Helpers.fromMin(candidateStart)} < 最早 ${Helpers.fromMin(earliestStartMin)} → 跳過`);\n                return;\n              }\n            } else {\n              reasons.push(`⚠️ 頭單 (無通勤數據，預設延後至 ${Helpers.fromMin(earliestStartMin)} 後)`);\n              constraints.firstJobDelayed = true;\n              console.log(`[3️⃣ Filter1] ⚠️ ${staffName} ${date}: 無通勤數據，候選 ${Helpers.fromMin(candidateStart)} ≥ ${Helpers.fromMin(earliestStartMin)} → OK (預設延後)`);\n            }\n          }\n        }\n\n        // ========================================\n        // Filter 2: 單與單15分鐘+30分鐘緩衝 (HARD FILTER)\n        // ========================================\n        // ========================================\n        // ✅ Filter 2 (Soft): Job-to-Job Gap Penalty\n        // ========================================\n        if (existingJobs.length > 0) {\n          for (const job of existingJobs) {\n            const jobStartMin = job.startMin;\n            const jobEndMin = job.endMin;\n\n            if (jobStartMin === null || jobEndMin === null) continue;\n\n            // Case 1: 新工作在現有工作之前\n            if (candidateEnd <= jobStartMin) {\n              const travelTime = job.prevTravel || CONFIG.DEFAULT_TRAVEL_TIME;\n              const requiredGap = travelTime + CONFIG.JOB_TO_JOB_BUFFER;\n              const actualGap = jobStartMin - candidateEnd;\n\n              if (actualGap < requiredGap) {\n                const shortage = requiredGap - actualGap;\n                let penalty = 0;\n\n                if (shortage <= 15) {\n                  penalty = CONFIG.SCORES.GAP_SHORT_1_15MIN;\n                } else if (shortage <= 30) {\n                  penalty = CONFIG.SCORES.GAP_SHORT_16_30MIN;\n                } else {\n                  penalty = CONFIG.SCORES.GAP_SHORT_OVER_30MIN;\n                }\n\n                score += penalty;\n                reasons.push(`與下一單間隔不足 (缺${shortage}分，${penalty}分)`);\n                constraints.gapShortageNext = shortage;\n                console.log(`[3️⃣ Filter2] ⚠️ ${staffName} ${date}: 與下一單${Helpers.fromMin(jobStartMin)}間隔${actualGap}分 < 需${requiredGap}分 (缺${shortage}分) → ${penalty}分`);\n              }\n            }\n\n            // Case 2: 新工作在現有工作之後\n            if (candidateStart >= jobEndMin) {\n              const travelTime = job.nextTravel || CONFIG.DEFAULT_TRAVEL_TIME;\n              const requiredGap = travelTime + CONFIG.JOB_TO_JOB_BUFFER;\n              const actualGap = candidateStart - jobEndMin;\n\n              if (actualGap < requiredGap) {\n                const shortage = requiredGap - actualGap;\n                let penalty = 0;\n\n                if (shortage <= 15) {\n                  penalty = CONFIG.SCORES.GAP_SHORT_1_15MIN;\n                } else if (shortage <= 30) {\n                  penalty = CONFIG.SCORES.GAP_SHORT_16_30MIN;\n                } else {\n                  penalty = CONFIG.SCORES.GAP_SHORT_OVER_30MIN;\n                }\n\n                score += penalty;\n                reasons.push(`與前一單間隔不足 (缺${shortage}分，${penalty}分)`);\n                constraints.gapShortagePrev = shortage;\n                console.log(`[3️⃣ Filter2] ⚠️ ${staffName} ${date}: 與前一單${Helpers.fromMin(jobEndMin)}間隔${actualGap}分 < 需${requiredGap}分 (缺${shortage}分) → ${penalty}分`);\n              }\n            }\n          }\n        }\n\n        // Rule 2.1: Fair Distribution\n        const hasNoJobsToday = dailyHistory.length === 0 || dayObj.booked_minutes === 0;\n        if (hasNoJobsToday) {\n          score += CONFIG.SCORES.PREF_NO_JOBS_TODAY;\n          reasons.push('優先派單：當天無工作');\n          constraints.hasNoJobsToday = true;\n        }\n\n        // Rule 3.1: Near Home Preference\n        if (isFirstJob || isLastJob) {\n          if (commuteMin <= 20) {\n            score += CONFIG.SCORES.PREF_NEAR_HOME;\n            reasons.push(`Near home (${commuteMin} min)`);\n          } else if (commuteMin > 45) {\n            score += CONFIG.SCORES.PENALTY_FAR_HOME;\n            reasons.push(`Far from home (${commuteMin} min)`);\n\n            if (commuteMin > 60 && candidateStart < 600) {\n              score += -30;\n              reasons.push(\"Early start at far location discouraged\");\n            }\n          }\n        }\n\n        // ========================================\n        // ✅ Filter 6: 清潔服務早上時段偏好\n        // 清潔服務優先安排在早上（12:00前）\n        // - 09:00-12:00: 加分 (+50)\n        // - 12:00-15:00: 輕微扣分 (-30)\n        // - 15:00後: 較大扣分 (-80)\n        // ========================================\n        if (isCleaningRequest) {\n          if (candidateStart < CONFIG.CLEANING_MORNING_CUTOFF) {\n            // 早上時段 (12:00前) - 加分\n            score += CONFIG.SCORES.CLEANING_MORNING_BONUS;\n            reasons.push(`✅ 清潔服務早上時段 (${Helpers.fromMin(candidateStart)}，+${CONFIG.SCORES.CLEANING_MORNING_BONUS}分)`);\n            constraints.cleaningMorningSlot = true;\n            console.log(`[3️⃣ Filter6] ✅ ${staffName} ${date}: 清潔服務 ${Helpers.fromMin(candidateStart)} < 12:00 → +${CONFIG.SCORES.CLEANING_MORNING_BONUS}分 (早上優先)`);\n          } else if (candidateStart < 900) {\n            // 下午時段 (12:00-15:00) - 輕微扣分\n            score += CONFIG.SCORES.CLEANING_AFTERNOON_PENALTY;\n            reasons.push(`⚠️ 清潔服務下午時段 (${Helpers.fromMin(candidateStart)}，${CONFIG.SCORES.CLEANING_AFTERNOON_PENALTY}分)`);\n            constraints.cleaningAfternoonSlot = true;\n            console.log(`[3️⃣ Filter6] ⚠️ ${staffName} ${date}: 清潔服務 ${Helpers.fromMin(candidateStart)} (12:00-15:00) → ${CONFIG.SCORES.CLEANING_AFTERNOON_PENALTY}分`);\n          } else {\n            // 傍晚時段 (15:00後) - 較大扣分\n            score += CONFIG.SCORES.CLEANING_EVENING_PENALTY;\n            reasons.push(`❌ 清潔服務傍晚時段 (${Helpers.fromMin(candidateStart)}，${CONFIG.SCORES.CLEANING_EVENING_PENALTY}分)`);\n            constraints.cleaningEveningSlot = true;\n            console.log(`[3️⃣ Filter6] ❌ ${staffName} ${date}: 清潔服務 ${Helpers.fromMin(candidateStart)} > 15:00 → ${CONFIG.SCORES.CLEANING_EVENING_PENALTY}分`);\n          }\n        }\n\n        candidates.push({\n          start: Helpers.fromMin(candidateStart),\n          end: Helpers.fromMin(candidateEnd),\n          qualityScore: score,\n          reasons: reasons,\n          constraints: constraints\n        });\n        });  // ✅ Close candidateStarts.forEach\n      });\n\n      return {\n        ...dayObj,\n        candidates,\n        hasCandidates: candidates.length > 0,\n        _filterStats: {\n          totalSkipped,\n          skippedReasons\n        }\n      };\n    });\n\n    return {\n      ...staffCal,\n      days: processedDays\n    };\n  });\n\n  // Count total candidates\n  let totalCandidates = 0;\n  let totalSkipped = 0;\n  filteredCalendar.forEach(s => {\n    s.days.forEach(d => {\n      totalCandidates += (d.candidates || []).length;\n      totalSkipped += d._filterStats?.totalSkipped || 0;\n    });\n  });\n\n  console.log(`[3️⃣ 生成並過濾] 處理完成: ${filteredCalendar.length} 位職員`);\n  console.log(`[3️⃣ 生成並過濾] 總候選數: ${totalCandidates}, 跳過數: ${totalSkipped}`);\n  console.log('[3️⃣ 生成並過濾] ========== 處理完成 ==========');\n\n  results.push({\n    json: {\n      ...json,\n      filteredSlotsCalendar: filteredCalendar\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7152,
+        6816
+      ],
+      "id": "3a702815-07d0-43bf-98e0-0c4b4a149717",
+      "name": "3️⃣ 生成並過濾候選時段"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\n// Step 4: Flatten and Limit Candidates (Max 2 per staff per day, then top 20 overall)\n// SORT BY DATE FIRST (earliest to latest)\nconst MAX_SLOTS_PER_STAFF_PER_DAY = 2;\nconst TOP_N_CANDIDATES = 20;  // ✅ Return 20 results\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const json = item.json;\n  const filteredCalendar = json.filteredSlotsCalendar || [];\n\n  console.log('[4️⃣ 限制] ========== START ==========');\n  console.log('[4️⃣ 限制] 📊 Items received:', items.length);\n  if (items.length > 0 && items[0].json) {\n    const json = items[0].json;\n    console.log('[4️⃣ 限制] 📊 filteredSlotsCalendar exists:', !!json.filteredSlotsCalendar);\n    if (json.filteredSlotsCalendar) {\n      console.log('[4️⃣ 限制] 📊 Staff count:', json.filteredSlotsCalendar.length);\n      let totalDays = 0;\n      let totalCandidates = 0;\n      json.filteredSlotsCalendar.forEach(s => {\n        totalDays += s.days.length;\n        s.days.forEach(d => {\n          if (d.candidates) totalCandidates += d.candidates.length;\n        });\n      });\n      console.log('[4️⃣ 限制] 📊 Total days:', totalDays);\n      console.log('[4️⃣ 限制] 📊 Total candidates before flatten:', totalCandidates);\n    }\n  }\n\n  // Flatten all candidates\n  const allCandidates = [];\n  for (const staffCal of filteredCalendar) {\n    const staffName = staffCal.staff;\n    for (const dayObj of staffCal.days) {\n      const date = dayObj.date;\n      const candidates = dayObj.candidates || [];\n\n      for (const candidate of candidates) {\n        allCandidates.push({\n          staff: staffName,\n          date: date,\n          start: candidate.start,\n          end: candidate.end,\n          qualityScore: candidate.qualityScore,\n          reasons: candidate.reasons,\n          constraints: candidate.constraints,\n          workHours: `${dayObj.work_start}-${dayObj.work_end}`\n        });\n      }\n    }\n  }\n\n  // ✅ SORT BY DATE FIRST (earliest to latest), then time, then score\n  allCandidates.sort((a, b) => {\n    // 1. Date (earliest first)\n    if (a.date !== b.date) return a.date.localeCompare(b.date);\n    // 2. Start time (earliest first)\n    if (a.start !== b.start) return a.start.localeCompare(b.start);\n    // 3. Quality score (highest first)\n    return b.qualityScore - a.qualityScore;\n  });\n\n  console.log(`[4️⃣ 限制] 📊 扁平化總候選: ${allCandidates.length} 個`);\n  if (allCandidates.length > 0) {\n    console.log(`[4️⃣ 限制] 📊 最早日期: ${allCandidates[0].date}`);\n    console.log(`[4️⃣ 限制] 📊 最晚日期: ${allCandidates[allCandidates.length - 1].date}`);\n  }\n\n  // Group by staff + date\n  const groupedByStaffDate = {};\n  for (const candidate of allCandidates) {\n    const key = `${candidate.staff}|${candidate.date}`;\n    if (!groupedByStaffDate[key]) groupedByStaffDate[key] = [];\n    groupedByStaffDate[key].push(candidate);\n  }\n\n  // ✅ Limit to MAX 2 slots per staff per day\n  const limitedCandidates = [];\n  let totalFiltered = 0;\n\n  for (const [key, candidates] of Object.entries(groupedByStaffDate)) {\n    // Sort by time within each staff+date group\n    candidates.sort((a, b) => {\n      if (a.start !== b.start) return a.start.localeCompare(b.start);\n      return b.qualityScore - a.qualityScore;\n    });\n\n    // Take top 2 per staff per day\n    const topCandidates = candidates.slice(0, MAX_SLOTS_PER_STAFF_PER_DAY);\n    limitedCandidates.push(...topCandidates);\n\n    const filtered = candidates.length - topCandidates.length;\n    if (filtered > 0) {\n      totalFiltered += filtered;\n      console.log(`[4️⃣ 限制] 📊 ${key}: 保留 ${topCandidates.length} 個時段, 過濾 ${filtered} 個`);\n    }\n  }\n\n  // ✅ Sort again by date (earliest first) after limiting\n  limitedCandidates.sort((a, b) => {\n    if (a.date !== b.date) return a.date.localeCompare(b.date);\n    if (a.start !== b.start) return a.start.localeCompare(b.start);\n    return b.qualityScore - a.qualityScore;\n  });\n\n  // ✅ Take TOP 20 candidates (date-sorted)\n  const topNCandidates = limitedCandidates.slice(0, TOP_N_CANDIDATES);\n  const additionalFiltered = limitedCandidates.length - topNCandidates.length;\n\n  console.log(`[4️⃣ 限制] 📊 限制後總候選: ${limitedCandidates.length} 個`);\n  console.log(`[4️⃣ 限制] 📊 送給AI的前 ${TOP_N_CANDIDATES} 個候選: ${topNCandidates.length} 個`);\n  console.log(`[4️⃣ 限制] 📊 過濾統計:`);\n  console.log(`   - 每職員每天限制過濾: ${totalFiltered} 個`);\n  console.log(`   - TOP ${TOP_N_CANDIDATES} 限制過濾: ${additionalFiltered} 個`);\n\n  if (topNCandidates.length > 0) {\n    console.log(`[4️⃣ 限制] 📊 前3名預覽 (按日期排序):`);\n    topNCandidates.slice(0, 3).forEach((c, i) => {\n      console.log(`   ${i + 1}. ${c.date} ${c.start}-${c.end} | ${c.staff} | 分數:${c.qualityScore}`);\n    });\n  }\n\n  results.push({\n    json: {\n      ...json,\n      allCandidates: topNCandidates,  // Date-sorted, top 20\n      allCandidatesBeforeLimit: allCandidates.length,\n      filterMeta: {\n        processedAt: new Date().toISOString(),\n        ruleVersion: \"1.8-date-first-sorting\",\n        totalCandidates: topNCandidates.length,\n        filteredBySlotLimit: totalFiltered,\n        filteredByTopN: additionalFiltered,\n        maxSlotsPerStaffPerDay: MAX_SLOTS_PER_STAFF_PER_DAY,\n        topNCandidates: TOP_N_CANDIDATES,\n        sortOrder: \"date (earliest first), then time, then score\"\n      }\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7152,
+        7008
+      ],
+      "id": "210e8015-c410-40b4-9459-444fa874f620",
+      "name": "4️⃣ 限制候選數量"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 🎯 Filter Staff by Capability (Priority #1) - WITH SKILL MATCH QUALITY\n// ✅ UPDATED v3: Changed from HARD filter to SOFT filter with penalty tracking\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const json = item.json;\n  const freeSlotsCalendar = json.freeSlotsCalendar || [];\n  const capabilityMap = json.capabilityMap || {};\n  const requestedService = json['服務'] || json['服務項目'] || '';\n  const currentServiceConfig = json.currentServiceConfig || {};\n  const supervisorList = json.supervisorList || [];\n\n  console.log('[🎯 過濾職員能力] ========== Priority #1 Filter ==========');\n  console.log(`[🎯 過濾職員能力] 請求的服務: ${requestedService}`);\n  console.log(`[🎯 過濾職員能力] 職員總數: ${freeSlotsCalendar.length}`);\n  console.log(`[🎯 過濾職員能力] 監工職員: ${supervisorList.length}位`);\n\n  // Filter 4: Check if service requires supervisor\n  const requiresSupervisor = currentServiceConfig.requires_supervisor || false;\n  const isGeneralCleaning = currentServiceConfig.is_general_cleaning || false;\n\n  if (requiresSupervisor) {\n    console.log(`[🎯 過濾職員能力] 👷 服務「${requestedService}」需要監工初訪及回訪`);\n  }\n  if (isGeneralCleaning) {\n    console.log(`[🎯 過濾職員能力] 🧹 服務「${requestedService}」是一般清潔，不需監工`);\n  }\n\n  // Cleaning service patterns\n  const CLEANING_PATTERNS = /清潔|清[🧹]?$|裝清|入清|吉清|深清|Clean/i;\n  const isCleaningServiceRequest = CLEANING_PATTERNS.test(requestedService);\n\n  // ✅ NEW: Specific cleaning service patterns for exact matching\n  const SPECIFIC_CLEANING = {\n    '裝修後清潔': /裝修後清潔|裝清/i,\n    '入伙前清潔': /入伙前清潔|入清/i,\n    '吉屋清潔': /吉屋清潔|吉清/i,\n    '深層清潔': /深層清潔|深清/i,\n    '定期清潔': /定期清潔|一般.*清潔|家居.*清潔/i\n  };\n\n  if (isCleaningServiceRequest) {\n    console.log(`[🎯 過濾職員能力] 🧹 偵測到清潔類服務: ${requestedService}`);\n  }\n\n  // ✅ NEW: Get match quality for skill matching\n  function getMatchQuality(capability, requested) {\n    if (!capability || !requested) return 'none';\n\n    const capLower = String(capability).toLowerCase().trim();\n    const reqLower = String(requested).toLowerCase().trim();\n\n    // Exact match (100%)\n    if (capLower === reqLower) return 'exact';\n\n    // ✅ IMPROVED: For cleaning services, check specific type match\n    if (isCleaningServiceRequest && CLEANING_PATTERNS.test(capLower)) {\n      // Check if both capability and requested service match the SAME specific cleaning type\n      for (const [serviceName, pattern] of Object.entries(SPECIFIC_CLEANING)) {\n        const capMatches = pattern.test(capLower);\n        const reqMatches = pattern.test(reqLower);\n\n        if (capMatches && reqMatches) {\n          // Both match the same specific cleaning type = exact match\n          console.log(`[🎯 過濾職員能力] ✅ 精確清潔服務匹配: ${capability} ↔ ${requested} (${serviceName})`);\n          return 'exact';\n        }\n      }\n\n      // Staff has SOME cleaning capability, but not the exact type = partial match\n      console.log(`[🎯 過濾職員能力] ⚠️ 部分清潔服務匹配: ${capability} ↔ ${requested} (不同類型)`);\n      return 'partial';\n    }\n\n    // Contains match (may be partial)\n    if (capLower.includes(reqLower) || reqLower.includes(capLower)) return 'exact';\n\n    // Remove common suffixes and try again\n    const capBase = capLower.replace(/(服務|防治|移除)$/g, '').trim();\n    const reqBase = reqLower.replace(/(服務|防治|移除)$/g, '').trim();\n\n    if (capBase && reqBase && capBase.length > 0 && reqBase.length > 0) {\n      if (capBase === reqBase || capBase.includes(reqBase) || reqBase.includes(capBase)) {\n        return 'exact';\n      }\n    }\n\n    return 'none';\n  }\n\n  // Filter 4: Check if staff has supervisor capability\n  function hasSupervisorCapability(staffName) {\n    const capabilities = capabilityMap[staffName] || [];\n    return capabilities.some(cap =>\n      /監工|主管|Supervisor|初訪|回訪/i.test(cap)\n    );\n  }\n\n  // ✅ CHANGED: Pass through all staff but track skill match quality\n  const filteredCalendar = freeSlotsCalendar.map(staffCal => {\n    const staffName = staffCal.staff;\n    const capabilities = capabilityMap[staffName];\n\n    // Default: no skill requirement\n    let skillMatchQuality = 'exact';\n    let matchedCapability = null;\n\n    // If no service specified, perfect match\n    if (!requestedService || !requestedService.trim()) {\n      console.log(`[🎯 過濾職員能力] ✅ ${staffName}: 無服務限制`);\n      return { ...staffCal, _skillMatchQuality: 'exact' };\n    }\n\n    // FALLBACK: If no capabilityMap at all, allow all staff\n    if (Object.keys(capabilityMap).length === 0) {\n      console.log(`[🎯 過濾職員能力] ⚠️ ${staffName}: capabilityMap為空，允許所有職員`);\n      return { ...staffCal, _skillMatchQuality: 'exact' };\n    }\n\n    // If staff has no capabilities listed, mark as 'none'\n    if (!capabilities || capabilities.length === 0) {\n      console.log(`[🎯 過濾職員能力] ❌ ${staffName}: 無技能列表 → 標記為 none`);\n      return { ...staffCal, _skillMatchQuality: 'none', _noSkillsListed: true };\n    }\n\n    // Filter 4: Check supervisor requirement (HARD filter - still reject)\n    if (requiresSupervisor) {\n      const anySupervisorsExist = supervisorList && supervisorList.length > 0;\n\n      if (anySupervisorsExist) {\n        const isSupervisor = hasSupervisorCapability(staffName);\n        if (!isSupervisor) {\n          console.log(`[🎯 過濾職員能力] ❌ ${staffName}: 服務需要監工能力，但職員無此資格 → 標記為 none`);\n          return { ...staffCal, _skillMatchQuality: 'none', _missingSupervisor: true };\n        }\n        console.log(`[🎯 過濾職員能力] ✅ ${staffName}: 具備監工資格`);\n      } else {\n        console.log(`[🎯 過濾職員能力] ⚠️ 系統無監工職員，改為檢查服務技能匹配`);\n      }\n    }\n\n    // ✅ NEW: Check skill match quality (not binary yes/no)\n    let bestMatchQuality = 'none';\n\n    for (const capability of capabilities) {\n      const matchQuality = getMatchQuality(capability, requestedService);\n\n      if (matchQuality === 'exact') {\n        bestMatchQuality = 'exact';\n        matchedCapability = capability;\n        console.log(`[🎯 過濾職員能力] ✅ ${staffName}: 具備 \"${capability}\" (精確匹配)`);\n        break;  // Found exact match, no need to check others\n      } else if (matchQuality === 'partial' && bestMatchQuality !== 'exact') {\n        bestMatchQuality = 'partial';\n        matchedCapability = capability;\n        console.log(`[🎯 過濾職員能力] ⚠️ ${staffName}: 具備 \"${capability}\" (部分匹配，將扣分)`);\n      }\n    }\n\n    if (bestMatchQuality === 'none') {\n      console.log(`[🎯 過濾職員能力] ❌ ${staffName}: 不具備 \"${requestedService}\"，技能: [${capabilities.join(', ')}] (將大幅扣分)`);\n    }\n\n    return {\n      ...staffCal,\n      _skillMatchQuality: bestMatchQuality,\n      _matchedCapability: matchedCapability\n    };\n  });\n\n  // ✅ CHANGED: No longer filter out staff, just track match quality\n  const stats = {\n    exact: filteredCalendar.filter(s => s._skillMatchQuality === 'exact').length,\n    partial: filteredCalendar.filter(s => s._skillMatchQuality === 'partial').length,\n    none: filteredCalendar.filter(s => s._skillMatchQuality === 'none').length\n  };\n\n  console.log(`[🎯 過濾職員能力] 結果: ${filteredCalendar.length} 位職員`);\n  console.log(`[🎯 過濾職員能力]   - 精確匹配: ${stats.exact} 位`);\n  console.log(`[🎯 過濾職員能力]   - 部分匹配 (將扣100分): ${stats.partial} 位`);\n  console.log(`[🎯 過濾職員能力]   - 無匹配 (將扣200分): ${stats.none} 位`);\n  console.log('[🎯 過濾職員能力] ========== Filter Complete ==========');\n\n  results.push({\n    json: {\n      ...json,\n      freeSlotsCalendar: filteredCalendar,\n      _capabilityFilterApplied: true,\n      _skillMatchStats: stats,\n      _supervisorFilterApplied: requiresSupervisor\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7152,
+        6624
+      ],
+      "id": "39024b43-d624-4b3f-b326-55f236512df2",
+      "name": "🎯 過濾職員能力"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ⏱️ 計算單與單行車時間 (Filter 2)\n// 目的：建立每位職員當天工作的行車時間映射，用於驗證單與單之間的緩衝時間\n\nconst items = $input.all();\nconst results = [];\n\nconst Helpers = {\n  toMin: (timeStr) => {\n    if (!timeStr) return null;\n    const [h, m] = String(timeStr).split(':').map(Number);\n    return h * 60 + m;\n  },\n  fromMin: (minutes) => {\n    const h = Math.floor(minutes / 60).toString().padStart(2, '0');\n    const m = (minutes % 60).toString().padStart(2, '0');\n    return `${h}:${m}`;\n  }\n};\n\nfor (const item of items) {\n  const json = item.json;\n  const machineData = json.machineData || [];\n  const historyByStaffDate = json.historyByStaffDate || {};\n  \n  console.log('[⏱️ 計算單與單] ========== 開始處理 ==========');\n  \n  // ========================================\n  // 建立職員每日工作行車時間映射\n  // ========================================\n  const jobTravelMap = {};\n  \n  for (const apt of machineData) {\n    if (!apt || !apt.staff) continue;\n    \n    const staffNames = String(apt.staff).split(/[+＋]/).map(s => s.trim()).filter(Boolean);\n    const date = apt.start_at ? apt.start_at.split('T')[0] : null;\n    if (!date) continue;\n    \n    for (const staffName of staffNames) {\n      const key = `${staffName}|${date}`;\n      if (!jobTravelMap[key]) jobTravelMap[key] = [];\n      \n      // 解析時間\n      const startTime = apt.start_at ? apt.start_at.substring(11, 16) : null;\n      const endTime = apt.end_at ? apt.end_at.substring(11, 16) : null;\n      \n      jobTravelMap[key].push({\n        id: apt.id,\n        start: apt.start_at,\n        end: apt.end_at,\n        startMin: Helpers.toMin(startTime),\n        endMin: Helpers.toMin(endTime),\n        district: apt.service_district,\n        service: apt.service,\n        // 行車時間資料\n        prevTravel: apt.prev?.drive_minutes || null,\n        nextTravel: apt.next?.drive_minutes || null,\n        prevDistrict: apt.prev?.district || null,\n        nextDistrict: apt.next?.district || null\n      });\n    }\n  }\n  \n  // 按開始時間排序每個職員每天的工作\n  for (const key of Object.keys(jobTravelMap)) {\n    jobTravelMap[key].sort((a, b) => {\n      const aTime = a.startMin || 0;\n      const bTime = b.startMin || 0;\n      return aTime - bTime;\n    });\n  }\n  \n  console.log(`[⏱️ 計算單與單] 📊 建立了 ${Object.keys(jobTravelMap).length} 個職員-日期組合`);\n  \n  // ========================================\n  // 計算每對相鄰工作之間的間隔和行車時間\n  // ========================================\n  const jobGapAnalysis = {};\n  \n  for (const [key, jobs] of Object.entries(jobTravelMap)) {\n    if (jobs.length < 2) continue;\n    \n    const gaps = [];\n    for (let i = 0; i < jobs.length - 1; i++) {\n      const currentJob = jobs[i];\n      const nextJob = jobs[i + 1];\n      \n      if (currentJob.endMin && nextJob.startMin) {\n        const gapMinutes = nextJob.startMin - currentJob.endMin;\n        const travelTime = nextJob.prevTravel || currentJob.nextTravel || 15; // 預設15分鐘\n        const bufferNeeded = travelTime + 30; // 行車時間 + 30分鐘緩衝\n        const isSufficient = gapMinutes >= bufferNeeded;\n        \n        gaps.push({\n          fromJob: currentJob.id,\n          toJob: nextJob.id,\n          fromEnd: Helpers.fromMin(currentJob.endMin),\n          toStart: Helpers.fromMin(nextJob.startMin),\n          gapMinutes,\n          travelTime,\n          bufferNeeded,\n          isSufficient,\n          fromDistrict: currentJob.district,\n          toDistrict: nextJob.district\n        });\n        \n        if (!isSufficient) {\n          console.log(`[⏱️ 計算單與單] ⚠️ ${key}: 間隔不足！`);\n          console.log(`   ${Helpers.fromMin(currentJob.endMin)} → ${Helpers.fromMin(nextJob.startMin)}`);\n          console.log(`   間隔: ${gapMinutes}分, 需要: ${bufferNeeded}分 (行車${travelTime}分+緩衝30分)`);\n        }\n      }\n    }\n    \n    if (gaps.length > 0) {\n      jobGapAnalysis[key] = gaps;\n    }\n  }\n  \n  console.log(`[⏱️ 計算單與單] 📊 分析了 ${Object.keys(jobGapAnalysis).length} 個有多單的職員-日期組合`);\n  console.log('[⏱️ 計算單與單] ========== 處理完成 ==========');\n  \n  results.push({\n    json: {\n      ...json,\n      jobTravelMap,\n      jobGapAnalysis\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7152,
+        6432
+      ],
+      "id": "80498b1f-faa6-40ee-9a3b-e295125479f6",
+      "name": "⏱️ 計算單與單行車時間"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Debug: Check what data is being passed to 職員地址\nconst inputData = $input.first().json;\n\nconsole.log('[DEBUG 職員地址輸入] ========== START ==========');\nconsole.log('[DEBUG 職員地址輸入] Input keys:', Object.keys(inputData || {}).slice(0, 20).join(', '));\n\nconst staffList = inputData?.staffList || [];\nconst staffCfg = inputData?.staffCfg || {};\n\nconsole.log('[DEBUG 職員地址輸入] staffList length:', staffList.length);\nconsole.log('[DEBUG 職員地址輸入] staffList type:', typeof staffList[0]);\nconsole.log('[DEBUG 職員地址輸入] staffList sample:', JSON.stringify(staffList.slice(0, 3)));\n\nconsole.log('[DEBUG 職員地址輸入] staffCfg keys:', Object.keys(staffCfg).length);\n\n// Check each staff's address\nconst addressCheck = [];\nfor (const staff of staffList.slice(0, 10)) {\n  const staffName = typeof staff === 'string' ? staff : (staff?.name || '');\n  const cfg = staffCfg[staffName] || {};\n  const homeDistrict = cfg.home_district || '(missing)';\n  addressCheck.push(`${staffName}: ${homeDistrict}`);\n}\nconsole.log('[DEBUG 職員地址輸入] Address check:', addressCheck.join(', '));\n\n// Build what origins would look like\nconst INVALID_PATTERNS = [\n  /^不適用$/i,\n  /^n\\/a$/i,\n  /^null$/i,\n  /^undefined$/i,\n  /^無$/i,\n  /^沒有$/i,\n  /^-$/,\n  /^\\.$/\n];\n\nconst isInvalidAddress = (addr) => {\n  if (!addr || typeof addr !== 'string') return true;\n  const trimmed = addr.trim();\n  if (!trimmed || trimmed.length < 2) return true;\n  return INVALID_PATTERNS.some(pattern => pattern.test(trimmed));\n};\n\nconst validAddresses = [];\nfor (const staff of staffList) {\n  const staffName = typeof staff === 'string' ? staff : (staff?.name || '');\n  const cfg = staffCfg[staffName] || {};\n  const raw = cfg.home_district || '';\n\n  if (!isInvalidAddress(raw)) {\n    const cleaned = raw.replace(/^(香港島|九龍|新界)/, '').trim();\n    if (cleaned) {\n      validAddresses.push(`${staffName}: ${cleaned}`);\n    }\n  }\n}\n\nconsole.log('[DEBUG 職員地址輸入] Valid addresses:', validAddresses.length);\nconsole.log('[DEBUG 職員地址輸入] Valid address list:', validAddresses.join(' | '));\nconsole.log('[DEBUG 職員地址輸入] ========== END ==========');\n\n// Pass through unchanged\nreturn $input.all();\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6480,
+        6112
+      ],
+      "id": "11d25b74-282a-41e5-b215-5fc4b7e5fbe0",
+      "name": "Debug 職員地址輸入"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 準備 Google Maps Distance Matrix API 參數\n// ⚠️ 不要 URL encode！讓 n8n HTTP Request node 處理編碼\n// ✅ UPDATED: Store staffOrder for index-based matching\n\nconst inputData = $input.first().json;\n\nconsole.log('[準備地圖參數] ========== START ==========');\n\n// ========================================\n// 1. 準備 Origins (職員住址)\n// ========================================\nconst staffList = Array.isArray(inputData?.staffList) ? inputData.staffList : [];\nconst staffCfg = inputData?.staffCfg || {};\n\nconsole.log('[準備地圖參數] staffList length:', staffList.length);\nconsole.log('[準備地圖參數] staffCfg keys:', Object.keys(staffCfg).length);\n\n// Invalid address patterns\nconst INVALID_PATTERNS = [\n  /^不適用$/i,\n  /^n\\/?a$/i,\n  /^null$/i,\n  /^undefined$/i,\n  /^無$/i,\n  /^沒有$/i,\n  /^-$/,\n  /^\\.$/\n];\n\nconst isInvalidAddress = (addr) => {\n  if (!addr || typeof addr !== 'string') return true;\n  const trimmed = addr.trim();\n  if (!trimmed || trimmed.length < 2) return true;\n  return INVALID_PATTERNS.some(pattern => pattern.test(trimmed));\n};\n\nconst validAddresses = [];\nconst addressToStaffMap = {};\nconst staffOrder = [];  // ✅ NEW: Ordered list of staff names (same order as addresses)\n\nfor (const staff of staffList) {\n  const staffName = typeof staff === 'string' ? staff : (staff?.name || '');\n  const cfg = staffCfg[staffName] || {};\n  const raw = cfg.home_district || '';\n\n  if (!isInvalidAddress(raw)) {\n    // Clean address: remove region prefix, add \", Hong Kong\"\n    let cleaned = raw.replace(/^(香港島|九龍|新界)/, '').trim();\n    if (cleaned && !isInvalidAddress(cleaned)) {\n      const finalAddr = cleaned.includes('Hong Kong') ? cleaned : `${cleaned}, Hong Kong`;\n      validAddresses.push(finalAddr);\n      addressToStaffMap[finalAddr] = staffName;\n      staffOrder.push(staffName);  // ✅ NEW: Store staff name in order\n      console.log(`[準備地圖參數] ✅ ${staffName}: \"${finalAddr}\"`);\n    }\n  } else {\n    console.log(`[準備地圖參數] ⚠️ ${staffName}: invalid address \"${raw}\"`);\n  }\n}\n\n// Build origins string - pipe-separated, NO URL encoding (n8n will handle it)\nlet originsString = '';\nif (validAddresses.length > 0) {\n  originsString = validAddresses.join('|');\n  console.log('[準備地圖參數] ✅ Origins count:', validAddresses.length);\n  console.log('[準備地圖參數] 📤 Origins (raw):', originsString);\n  console.log('[準備地圖參數] 📋 Staff order:', staffOrder.join(', '));\n} else {\n  originsString = 'Hong Kong';\n  console.log('[準備地圖參數] ⚠️ No valid origins, using fallback: Hong Kong');\n}\n\n// ========================================\n// 2. 準備 Destinations (服務地點)\n// ========================================\nlet area = inputData?.serviceDistrict || inputData?.district || inputData['地區'] || '';\n\nif (!area || typeof area !== 'string') {\n  area = 'Hong Kong';\n  console.log('[準備地圖參數] ⚠️ No service district, using fallback: Hong Kong');\n} else {\n  // Clean area\n  area = area.replace(/^(香港島|九龍|新界)/, '').trim();\n  if (!area) {\n    area = 'Hong Kong';\n  } else if (!/hong\\s*kong$/i.test(area)) {\n    area = `${area}, Hong Kong`;\n  }\n  console.log('[準備地圖參數] ✅ Destination:', area);\n}\n\n// NO URL encoding - n8n will handle it\nconst destinationsString = area;\n\nconsole.log('[準備地圖參數] 📤 Destinations (raw):', destinationsString);\nconsole.log('[準備地圖參數] ========== END ==========');\n\n// Return all original data plus the prepared params\nreturn [{\n  json: {\n    ...inputData,\n    _mapsParams: {\n      origins: originsString,\n      destinations: destinationsString,\n      validAddressCount: validAddresses.length,\n      addressToStaffMap: addressToStaffMap,\n      staffOrder: staffOrder  // ✅ NEW: Ordered list for index-based matching\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6704,
+        6112
+      ],
+      "id": "21472d69-0be6-4e6b-abe0-86b3338d9fca",
+      "name": "準備地圖查詢參數"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        7792,
+        6288
+      ],
+      "id": "d188e67b-740a-447d-a9c4-a68687234f48",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "QhNUnhFx3MlmpGkD",
+          "name": "Google Gemini-(Sharing)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Fev9gNZ65LDN79xULz3VNjKdpxLv9wpNl9VVpMk9Wuk",
+          "mode": "list",
+          "cachedResultName": "排程預約資料",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Fev9gNZ65LDN79xULz3VNjKdpxLv9wpNl9VVpMk9Wuk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 0,
+          "mode": "list",
+          "cachedResultName": "服務基準時間",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Fev9gNZ65LDN79xULz3VNjKdpxLv9wpNl9VVpMk9Wuk/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        7888,
+        6992
+      ],
+      "id": "143727b2-55ef-4702-8b5a-3ea387952558",
+      "name": "Service_Config",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UyeDwKkJiSG26Qg5",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        8656,
+        6640
+      ],
+      "id": "4214deb4-9772-4d9d-ae26-8da61879b3c5",
+      "name": "合併Service設定"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "抽出必要字段",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set System Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "客戶預約請求": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "職員地址": {
+      "main": [
+        [
+          {
+            "node": "合併地圖與職員資料",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抽出必要字段": {
+      "main": [
+        [
+          {
+            "node": "獲取未來7D CRM排程",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "拆分出每個預約": {
+      "main": [
+        [
+          {
+            "node": "CRM-抽出必要字段",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM-抽出必要字段": {
+      "main": [
+        [
+          {
+            "node": "距離矩陣批次",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "獲取未來7D CRM排程": {
+      "main": [
+        [
+          {
+            "node": "拆分出每個預約",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "把資料轉到AI agent友好": {
+      "main": [
+        [
+          {
+            "node": "Debug 職員地址輸入",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "合併地圖與職員資料",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判斷回訪預約": {
+      "main": [
+        [
+          {
+            "node": "整合預約資料",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "距離矩陣批次": {
+      "main": [
+        [
+          {
+            "node": "判斷回訪預約",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整合預約資料": {
+      "main": [
+        [
+          {
+            "node": "從預約提取職員資料",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "合併CRM資料",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Staff_Config",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Service_Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "解析並格式化AI輸出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "從預約提取職員資料": {
+      "main": [
+        [
+          {
+            "node": "合併CRM資料",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "合併CRM資料": {
+      "main": [
+        [
+          {
+            "node": "合併CRM資料1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Staff_Config": {
+      "main": [
+        [
+          {
+            "node": "整理Google職員資料",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Service_Config": {
+      "main": [
+        [
+          {
+            "node": "合併Service設定",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "合併Service設定": {
+      "main": [
+        [
+          {
+            "node": "合併Staff設定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合併Staff設定": {
+      "main": [
+        [
+          {
+            "node": "把資料轉到AI agent友好",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理職員通勤摘要": {
+      "main": [
+        [
+          {
+            "node": "1️⃣ 建立配置映射",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合併地圖與職員資料": {
+      "main": [
+        [
+          {
+            "node": "整理職員通勤摘要",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理Google職員資料": {
+      "main": [
+        [
+          {
+            "node": "合併CRM資料1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "合併CRM資料1": {
+      "main": [
+        [
+          {
+            "node": "合併Service設定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析並格式化AI輸出": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1️⃣ 建立配置映射": {
+      "main": [
+        [
+          {
+            "node": "2️⃣ 建立職員歷史索引",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2️⃣ 建立職員歷史索引": {
+      "main": [
+        [
+          {
+            "node": "⏱️ 計算單與單行車時間",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⏱️ 計算單與單行車時間": {
+      "main": [
+        [
+          {
+            "node": "🎯 過濾職員能力",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3️⃣ 生成並過濾候選時段": {
+      "main": [
+        [
+          {
+            "node": "4️⃣ 限制候選數量",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4️⃣ 限制候選數量": {
+      "main": [
+        [
+          {
+            "node": "Set System Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎯 過濾職員能力": {
+      "main": [
+        [
+          {
+            "node": "3️⃣ 生成並過濾候選時段",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debug 職員地址輸入": {
+      "main": [
+        [
+          {
+            "node": "準備地圖查詢參數",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "準備地圖查詢參數": {
+      "main": [
+        [
+          {
+            "node": "職員地址",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5b37d30e-b3b2-49f4-89b0-c28953b2293b",
+  "meta": {
+    "instanceId": "a528359f5b4a907bcdbdb1bdd3512c336c95b86b14c52d72b4dcc06e771f42db"
+  },
+  "id": "8sfayQQbZkBn1ObO",
+  "tags": []
+}
