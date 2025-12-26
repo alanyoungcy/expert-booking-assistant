@@ -12,8 +12,11 @@ const App: React.FC = () => {
   const getInitialService = (): ServiceType => {
     const params = new URLSearchParams(window.location.search);
     const serviceParam = params.get('service');
-    if (serviceParam === 'pest' || serviceParam === 'cleaning') {
-      return serviceParam;
+    if (serviceParam === 'pest') {
+      return 'pest';
+    }
+    if (serviceParam === 'clean' || serviceParam === 'cleaning') {
+      return 'cleaning';
     }
     return 'pest';
   };
@@ -76,9 +79,10 @@ const App: React.FC = () => {
   // Update URL when service changes
   const handleServiceChange = (service: ServiceType) => {
     setActiveService(service);
-    // Update URL without page reload
+    // Update URL without page reload (use 'clean' instead of 'cleaning' in URL)
     const url = new URL(window.location.href);
-    url.searchParams.set('service', service);
+    const urlService = service === 'cleaning' ? 'clean' : service;
+    url.searchParams.set('service', urlService);
     window.history.pushState({}, '', url.toString());
   };
 
