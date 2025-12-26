@@ -114,7 +114,7 @@ const App: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 h-24 flex items-center justify-between">
           <div className="flex items-center">
              {/* 左上角 Logo 容器 */}
-             <div className="h-16 flex items-center overflow-hidden hidden">
+             <div className="h-16 flex items-center overflow-hidden">
                 {activeService === 'pest' ? (
                   pestLogoError ? (
                     <span className="text-xl font-black text-zinc-900">滅蟲職人 PEST KILLER</span>
@@ -141,7 +141,7 @@ const App: React.FC = () => {
              </div>
           </div>
           
-          <nav className="flex p-1 bg-slate-100 rounded-xl text-xs font-bold shadow-inner">
+          <nav className="flex p-1 bg-slate-100 rounded-xl text-xs font-bold shadow-inner hidden">
             <button
               onClick={() => handleServiceChange('pest')}
               className={`px-4 py-2 rounded-lg transition-all ${activeService === 'pest' ? 'bg-zinc-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
