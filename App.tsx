@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PestControlForm } from './components/PestControlForm';
 import { CleaningForm } from './components/CleaningForm';
 import { ResultsPage } from './components/ResultsPage';
@@ -8,7 +8,17 @@ import { ShieldCheck, Lock, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { submitBooking } from './services/api';
 
 const App: React.FC = () => {
-  const [activeService, setActiveService] = useState<ServiceType>('pest');
+  // Get initial service from URL parameter, default to 'pest'
+  const getInitialService = (): ServiceType => {
+    const params = new URLSearchParams(window.location.search);
+    const serviceParam = params.get('service');
+    if (serviceParam === 'pest' || serviceParam === 'cleaning') {
+      return serviceParam;
+    }
+    return 'pest';
+  };
+
+  const [activeService, setActiveService] = useState<ServiceType>(getInitialService());
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +73,25 @@ const App: React.FC = () => {
     alert(`已選擇時段：\n${recommendation.staff}\n${recommendation.date} ${recommendation.startTime}-${recommendation.endTime}`);
   };
 
+  // Update URL when service changes
+  const handleServiceChange = (service: ServiceType) => {
+    setActiveService(service);
+    // Update URL without page reload
+    const url = new URL(window.location.href);
+    url.searchParams.set('service', service);
+    window.history.pushState({}, '', url.toString());
+  };
+
+  // Listen for URL changes (back/forward buttons)
+  useEffect(() => {
+    const handlePopState = () => {
+      const newService = getInitialService();
+      setActiveService(newService);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   if (isSubmitted && response?.data) {
     return (
       <ResultsPage
@@ -110,13 +139,13 @@ const App: React.FC = () => {
           
           <nav className="flex p-1 bg-slate-100 rounded-xl text-xs font-bold shadow-inner">
             <button
-              onClick={() => setActiveService('pest')}
+              onClick={() => handleServiceChange('pest')}
               className={`px-4 py-2 rounded-lg transition-all ${activeService === 'pest' ? 'bg-zinc-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
             >
               滅蟲服務
             </button>
             <button
-              onClick={() => setActiveService('cleaning')}
+              onClick={() => handleServiceChange('cleaning')}
               className={`px-4 py-2 rounded-lg transition-all ${activeService === 'cleaning' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
             >
               清潔服務
